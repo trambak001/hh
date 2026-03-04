@@ -36,9 +36,20 @@ class GestureDetector {
     }
 
     _fireTransition(from, to, data) {
-        const key = `${from}->${to}`;
-        const callbacks = this.gestureCallbacks[key] || [];
-        callbacks.forEach(cb => cb(data));
+        // Exact match
+        const exactKey = `${from}->${to}`;
+        const exactCallbacks = this.gestureCallbacks[exactKey] || [];
+        exactCallbacks.forEach(cb => cb(data));
+
+        // Any previous gesture to specific
+        const anyFromKey = `ANY->${to}`;
+        const anyFromCallbacks = this.gestureCallbacks[anyFromKey] || [];
+        anyFromCallbacks.forEach(cb => cb(data));
+
+        // Specific gesture to any next
+        const anyToKey = `${from}->ANY`;
+        const anyToCallbacks = this.gestureCallbacks[anyToKey] || [];
+        anyToCallbacks.forEach(cb => cb(data));
     }
 
     _isFingerExtended(landmarks, tipIdx, pipIdx, mcpIdx) {

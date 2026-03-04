@@ -674,14 +674,18 @@ body {
 
 .room-code {
     display: block;
-    font-size: 2rem;
+    font-size: 1.8rem;
     font-weight: 800;
-    letter-spacing: 6px;
+    letter-spacing: 4px;
+    margin-right: -4px;
+    /* offset the spacing so it perfectly centers */
     background: linear-gradient(90deg, var(--holi-gold), var(--holi-orange));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     animation: pulse 2s ease-in-out infinite;
+    word-break: break-all;
+    overflow-wrap: break-word;
 }
 
 .room-code-hint {

@@ -112,7 +112,7 @@ class App {
         });
 
         // Gesture-based mode switching
-        this.gesture.onGestureTransition(GESTURES.PEACE, GESTURES.NONE, () => {
+        this.gesture.onGestureTransition('ANY', GESTURES.PEACE, () => {
             // Cycle modes: splash -> balloon -> party -> splash
             const modes = [MODES.SPLASH, MODES.BALLOON, MODES.PARTY];
             const idx = modes.indexOf(this.currentMode);
