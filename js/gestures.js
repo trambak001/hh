@@ -122,7 +122,15 @@ class GestureDetector {
 
     update(landmarks, canvasWidth, canvasHeight) {
         if (!landmarks || landmarks.length < 21) {
-            this.currentGesture = GESTURES.NONE;
+            if (this.currentGesture !== GESTURES.NONE) {
+                this.prevGesture = this.currentGesture;
+                this.currentGesture = GESTURES.NONE;
+                this.pendingGesture = GESTURES.NONE;
+                this._fireTransition(this.prevGesture, this.currentGesture, {
+                    position: { ...this.handPosition },
+                    velocity: { x: 0, y: 0 },
+                });
+            }
             return;
         }
 

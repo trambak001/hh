@@ -289,6 +289,7 @@ class App {
             this.currentGestureDisplay = this.gesture.getGesture();
         } else {
             this.handDetected = false;
+            this.gesture.update(null); // Force transition to NONE
             this.currentGestureDisplay = GESTURES.NONE;
         }
     }
