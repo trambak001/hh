@@ -575,13 +575,15 @@ body {
 .party-actions {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin-bottom: 12px;
+    gap: 12px;
+    margin-bottom: 20px;
+    width: 100%;
 }
 
 .join-group {
     display: flex;
-    gap: 6px;
+    gap: 8px;
+    width: 100%;
 }
 
 .btn {
@@ -629,6 +631,7 @@ body {
 
 .input-code {
     flex: 1;
+    min-width: 120px;
     padding: 10px 14px;
     background: rgba(255, 255, 255, 0.06);
     border: 1px solid var(--glass-border);
@@ -872,35 +875,87 @@ body {
     }
 }
 
-/* ============================================
-   Video Chat & Admin Approvals
-   ============================================ */
-.video-chat-container {
+/* =========================================
+   Video Chat Layout (Phase 7 - Grid)
+   ========================================= */
+.video-chat-overlay {
     position: absolute;
-    top: 20px;
-    right: 20px;
-    z-index: 10;
+    inset: 0;
+    z-index: 50;
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
-    gap: 12px;
+    pointer-events: none;
+    /* Let clicks pass to canvas */
+}
+
+.video-chat-overlay.hidden {
+    display: none;
+}
+
+.video-grid {
+    flex: 1;
+    display: grid;
+    gap: 10px;
+    padding: 20px;
+    /* Grid dimensions set dynamically via JS classes */
+}
+
+/* Grid Layout Types */
+.video-grid.grid-1 {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+}
+
+.video-grid.grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: 1fr;
+}
+
+.video-grid.grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+}
+
+.video-grid.grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+}
+
+.video-grid.grid-5 {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+}
+
+.video-grid.grid-6 {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+}
+
+.video-grid.grid-more {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
 }
 
 .remote-video-wrapper {
-    width: 180px;
-    height: 135px;
-    border-radius: 12px;
-    overflow: hidden;
-    background: rgba(0, 0, 0, 0.8);
-    border: 2px solid rgba(255, 255, 255, 0.1);
     position: relative;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    transition: all 0.3s ease;
+    width: 100%;
+    height: 100%;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    pointer-events: auto;
+    /* Clickable elements inside */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
 }
 
-.remote-video-wrapper.active {
-    border-color: var(--holi-green);
-    box-shadow: 0 0 15px rgba(0, 255, 128, 0.3);
+.remote-video-wrapper:hover {
+    border-color: var(--holi-pink);
+    box-shadow: 0 0 15px rgba(255, 0, 128, 0.4);
 }
 
 .remote-video-wrapper video {
@@ -908,25 +963,53 @@ body {
     height: 100%;
     object-fit: cover;
     transform: scaleX(-1);
-    /* Mirror remote video if it's their front cam */
+    /* Mirror remote videos */
 }
 
 .video-label {
     position: absolute;
-    bottom: 6px;
+    bottom: 8px;
     left: 8px;
-    font-size: 0.75rem;
+    background: rgba(10, 5, 20, 0.7);
+    color: var(--text-light);
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
     font-weight: 600;
-    color: white;
-    background: rgba(0, 0, 0, 0.6);
-    padding: 2px 8px;
-    border-radius: 6px;
     backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .call-controls {
-    border-radius: 20px;
-    padding: 6px !important;
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: auto;
+    border-radius: 30px;
+    padding: 8px 16px;
+    gap: 12px;
+}
+
+.participants-sidebar {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 250px;
+    bottom: 90px;
+    border-radius: var(--radius-lg);
+    background: rgba(15, 10, 25, 0.85);
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+}
+
+.participants-sidebar.hidden {
+    display: none;
 }
 
 .btn-icon {
@@ -1546,4 +1629,269 @@ body {
     background: rgba(0, 255, 128, 0.1);
     color: var(--holi-green);
     border: 1px solid rgba(0, 255, 128, 0.3);
+}
+
+/* =========================================
+   Social / Friends Sidebar (Phase 6)
+   ========================================= */
+.social-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.social-toggle:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
+.badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background: var(--holi-pink);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: bold;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.social-sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 320px;
+    background: rgba(15, 10, 25, 0.95);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 2000;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -5px 0 20px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+    overflow-y: auto;
+}
+
+.social-sidebar.hidden {
+    transform: translateX(100%);
+    display: flex !important;
+    /* Override normal hidden */
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-header h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin: 0;
+    background: linear-gradient(90deg, var(--holi-orange), var(--holi-gold));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.btn-close:hover {
+    color: var(--holi-pink);
+}
+
+.avatar-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.avatar-circle {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.presence-dot {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid rgb(15, 10, 25);
+}
+
+.presence-dot.online {
+    background-color: var(--holi-green);
+    box-shadow: 0 0 8px var(--holi-green);
+}
+
+.presence-dot.offline {
+    background-color: var(--text-dim);
+}
+
+.user-info h4 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.section-title {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.friends-list,
+.requests-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.friend-item,
+.request-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background 0.2s;
+}
+
+.friend-item:hover,
+.request-item:hover {
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.friend-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+    /* for text truncation */
+}
+
+.friend-avatar {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.friend-name {
+    font-weight: 500;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.friend-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.action-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.action-btn:hover {
+    transform: scale(1.1);
+}
+
+.action-btn.accept {
+    background: rgba(0, 255, 128, 0.2);
+    color: var(--holi-green);
+}
+
+.action-btn.accept:hover {
+    background: rgba(0, 255, 128, 0.4);
+}
+
+.action-btn.deny {
+    background: rgba(255, 0, 80, 0.2);
+    color: var(--holi-pink);
+}
+
+.action-btn.deny:hover {
+    background: rgba(255, 0, 80, 0.4);
+}
+
+.action-btn.invite {
+    background: rgba(124, 77, 255, 0.2);
+    color: var(--holi-purple);
+}
+
+.action-btn.invite:hover {
+    background: rgba(124, 77, 255, 0.4);
+}
+
+.btn-sm {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+}
+
+.w-full {
+    width: 100%;
 }

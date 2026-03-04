@@ -102,8 +102,8 @@ class GestureDetector {
             return GESTURES.FIST;
         }
 
-        // PEACE: index and middle extended, others closed
-        if (index && middle && !ring && !pinky) {
+        // PEACE: index and middle extended, ring/pinky mostly curled
+        if (index && middle && (curledCount >= 2 || (!ring && !pinky))) {
             return GESTURES.PEACE;
         }
 

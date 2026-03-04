@@ -294,18 +294,85 @@
       <div class="toast-content" id="toastMessage"></div>
     </div>
 
-    <!-- Video Call Overlays -->
-    <div id="videoChatContainer" class="video-chat-container hidden">
-      <div id="remoteVideoWrapper" class="remote-video-wrapper">
-        <video id="remoteVideo" autoplay playsinline></video>
-        <div id="remoteUserName" class="video-label">Friend</div>
+    <!-- Social / Friends Sidebar -->
+    <button id="toggleSocialBtn" class="btn btn-icon social-toggle" title="Friends & Profile">
+      <span class="icon">👥</span>
+      <span id="pendingRequestBadge" class="badge hidden"></span>
+    </button>
+
+    <div id="socialSidebar" class="social-sidebar hidden">
+      <div class="sidebar-header">
+        <h3>Profile & Friends</h3>
+        <button id="closeSocialBtn" class="btn-close">&times;</button>
       </div>
 
-      <!-- Audio controls for local user -->
+      <!-- Current User Profile -->
+      <div class="user-profile glass p-3 mb-3">
+        <div class="avatar-row">
+          <div class="avatar-circle">
+            <span id="userAvatarEmoji">👤</span>
+            <div id="userPresenceDot" class="presence-dot online"></div>
+          </div>
+          <div class="user-info">
+            <h4 id="userProfileName">Loading...</h4>
+            <span id="userPhoneNumber" class="text-xs text-dim"></span>
+          </div>
+        </div>
+        <button id="editProfileBtn" class="btn secondary-btn btn-sm mt-2 w-full">Edit Profile</button>
+        <button id="logoutBtn" class="btn danger-btn btn-sm mt-2 w-full">Logout</button>
+      </div>
+
+      <!-- Add Friend -->
+      <div class="add-friend-section mb-3">
+        <div class="input-group flex gap-2">
+          <input type="tel" id="addFriendInput" class="auth-input flex-1" placeholder="+1234567890">
+          <button id="sendFriendRequestBtn" class="btn primary-btn btn-icon text-sm">Add</button>
+        </div>
+      </div>
+
+      <!-- Friend Requests -->
+      <div id="friendRequestsSection" class="requests-section mb-3 hidden">
+        <h4 class="section-title">Pending Requests</h4>
+        <div id="friendRequestsList" class="requests-list">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Friends List -->
+      <div class="friends-section">
+        <h4 class="section-title">Friends</h4>
+        <div id="friendsList" class="friends-list">
+          <!-- Populated by JS -->
+          <p class="text-xs text-dim p-2 text-center" id="noFriendsMsg">No friends yet. Add some!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Video Call Overlays -->
+    <div id="videoChatContainer" class="video-chat-overlay hidden">
+      <div id="videoGrid" class="video-grid">
+        <!-- Participant videos injected here dynamically -->
+      </div>
+
+      <!-- Bottom Audio/Participants controls for local user -->
       <div class="call-controls glass p-2 flex gap-2">
         <button id="toggleMicBtn" class="btn btn-icon" title="Mute/Unmute Mic">
           <span class="icon">🎙️</span>
         </button>
+        <button id="toggleParticipantsBtn" class="btn btn-icon" title="Participants List">
+          <span class="icon">📜</span>
+        </button>
+      </div>
+
+      <!-- Participants Sidebar (In-Room) -->
+      <div id="roomParticipantsSidebar" class="participants-sidebar glass hidden">
+        <div class="sidebar-header">
+          <h4 class="text-holi-pink text-lg font-bold">In Room</h4>
+          <button id="closeParticipantsBtn" class="btn-close text-sm">&times;</button>
+        </div>
+        <div id="roomParticipantsList" class="flex flex-col gap-2 p-2">
+          <!-- Room participants injected here -->
+        </div>
       </div>
     </div>
 
@@ -320,6 +387,36 @@
           <button id="denyRequestBtn" class="btn btn-secondary">Deny</button>
           <button id="acceptRequestBtn" class="btn btn-primary">Admit</button>
         </div>
+      </div>
+    </div>
+
+    <!-- Edit Profile Overlay -->
+    <div id="editProfileOverlay" class="auth-overlay hidden" style="z-index:3000;">
+      <div class="auth-card glass">
+        <div class="sidebar-header">
+          <h3 class="auth-title" style="font-size: 1.4rem;">Edit Profile</h3>
+          <button id="closeProfileBtn" class="btn-close">&times;</button>
+        </div>
+
+        <div class="input-group">
+          <label class="auth-label">Avatar Emoji</label>
+          <input type="text" id="profileAvatarInput" class="auth-input text-center text-3xl" value="👤" maxlength="2">
+        </div>
+        <div class="input-group">
+          <label class="auth-label">Display Name</label>
+          <input type="text" id="profileNameInput" class="auth-input">
+        </div>
+        <div class="input-group">
+          <label class="auth-label">Location (Optional)</label>
+          <input type="text" id="profileLocInput" class="auth-input" placeholder="e.g. Mumbai, India">
+        </div>
+        <div class="input-group">
+          <label class="auth-label">Bio (Optional)</label>
+          <textarea id="profileBioInput" class="auth-input" rows="2" style="resize:none;"
+            placeholder="Ready to play Holi!"></textarea>
+        </div>
+
+        <button id="saveProfileBtn" class="btn primary-btn auth-btn mt-2">Save Profile</button>
       </div>
     </div>
 

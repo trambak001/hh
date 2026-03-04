@@ -1,88 +1,54 @@
-// ============================================
-// Holi Party Mode (Multiplayer)
-// ============================================
-
 import { db, ref, set, push, onChildAdded, onValue, remove, update, get } from './firebase-config.js';
-import { HOLI_COLORS, randomHoliColor, hexToRgb } from './particles.js';
+import { HOLI_COLORS } from './particles.js';
 import { GESTURES } from './gestures.js';
 
-// Flying balloon animation for incoming water balloons
 class FlyingBalloon {
-    constructor(fromEdge, targetX, targetY, color, canvasWidth, canvasHeight) {
-        this.color = color;
-        this.rgb = hexToRgb(color);
+    constructor(id, targetX, targetY, color, cw, ch) {
+        this.id = id;
         this.targetX = targetX;
         this.targetY = targetY;
-        this.canvasWidth = canvasWidth;
-        this.canvasHeight = canvasHeight;
-        this.size = 30;
-        this.progress = 0;
-        this.speed = 0.02;
-        this.wobble = 0;
+        this.color = color;
+        this.x = cw / 2;
+        this.y = ch;
+        this.speed = 15;
+        this.size = 20;
         this.burst = false;
 
-        // Start from random edge
-        const edges = ['left', 'right', 'top'];
-        const edge = fromEdge || edges[Math.floor(Math.random() * edges.length)];
-        switch (edge) {
-            case 'left': this.x = -40; this.y = Math.random() * canvasHeight * 0.5; break;
-            case 'right': this.x = canvasWidth + 40; this.y = Math.random() * canvasHeight * 0.5; break;
-            case 'top': this.x = Math.random() * canvasWidth; this.y = -40; break;
-        }
-        this.startX = this.x;
-        this.startY = this.y;
+        const dx = targetX - this.x;
+        const dy = targetY - this.y;
+        const dist = Math.hypot(dx, dy);
+        this.vx = (dx / dist) * this.speed;
+        this.vy = (dy / dist) * this.speed;
     }
 
     update() {
-        this.progress += this.speed;
-        this.wobble += 0.15;
-
-        // Ease-in trajectory
-        const t = this.progress;
-        const eased = t * t * (3 - 2 * t); // smoothstep
-        this.x = this.startX + (this.targetX - this.startX) * eased + Math.sin(this.wobble) * 8;
-        this.y = this.startY + (this.targetY - this.startY) * eased + Math.cos(this.wobble * 0.7) * 5;
-
-        if (this.progress >= 1) {
+        this.x += this.vx;
+        this.y += this.vy;
+        const distToTarget = Math.hypot(this.targetX - this.x, this.targetY - this.y);
+        if (distToTarget < this.speed || this.y < 0) {
             this.burst = true;
+            return false; // kill balloon
         }
-
-        return !this.burst;
+        return true;
     }
 
     draw(ctx) {
         ctx.save();
-
-        // Balloon body with water-filled look
-        const gradient = ctx.createRadialGradient(
-            this.x - this.size * 0.15, this.y - this.size * 0.15, this.size * 0.1,
-            this.x, this.y, this.size
-        );
-        gradient.addColorStop(0, `rgba(${Math.min(this.rgb.r + 80, 255)}, ${Math.min(this.rgb.g + 80, 255)}, ${Math.min(this.rgb.b + 80, 255)}, 0.6)`);
-        gradient.addColorStop(0.5, `rgba(${this.rgb.r}, ${this.rgb.g}, ${this.rgb.b}, 0.7)`);
-        gradient.addColorStop(1, `rgba(${Math.max(this.rgb.r - 30, 0)}, ${Math.max(this.rgb.g - 30, 0)}, ${Math.max(this.rgb.b - 30, 0)}, 0.8)`);
-
-        ctx.fillStyle = gradient;
         ctx.beginPath();
-        // Water balloon shape (slightly bulgy at bottom)
-        ctx.ellipse(this.x, this.y, this.size * 0.7, this.size * 0.9, 0, 0, Math.PI * 2);
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
         ctx.fill();
-
-        // Water shimmer
-        ctx.fillStyle = `rgba(255, 255, 255, 0.35)`;
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        // little tie at the bottom
         ctx.beginPath();
-        ctx.ellipse(this.x - this.size * 0.2, this.y - this.size * 0.25, this.size * 0.12, this.size * 0.2, -0.4, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Knot
-        ctx.fillStyle = `rgba(${this.rgb.r}, ${this.rgb.g}, ${this.rgb.b}, 1)`;
-        ctx.beginPath();
-        ctx.moveTo(this.x - 3, this.y - this.size * 0.9);
-        ctx.lineTo(this.x + 3, this.y - this.size * 0.9);
-        ctx.lineTo(this.x, this.y - this.size * 0.9 - 5);
+        ctx.moveTo(this.x, this.y + this.size);
+        ctx.lineTo(this.x - 5, this.y + this.size + 8);
+        ctx.lineTo(this.x + 5, this.y + this.size + 8);
         ctx.closePath();
         ctx.fill();
-
+        ctx.stroke();
         ctx.restore();
     }
 }
@@ -90,63 +56,50 @@ class FlyingBalloon {
 class HoliPartyMode {
     constructor(particleManager, canvasWidth, canvasHeight) {
         this.particles = particleManager;
-        this.isActive = false;
         this.canvasWidth = canvasWidth;
         this.canvasHeight = canvasHeight;
+        this.isActive = false;
 
-        // Room state
         this.roomCode = null;
-        this.playerId = null;
         this.playerName = 'Player';
+        this.playerId = null; // Will be set to auth UID
         this.isHost = false;
-        this.opponentOnline = false;
-        this.opponentName = 'Waiting...';
 
-        // Scores
-        this.myScore = 0;
-        this.opponentScore = 0;
-
-        // Color index for powder throws
         this.currentColorIndex = 0;
+        this.currentColor = HOLI_COLORS[0];
 
-        // Flying balloons (incoming from opponent)
+        this.myScore = 0;
+        this.players = {}; // Key: userId, Value: {name, score, online}
+
+        // Projectiles
         this.flyingBalloons = [];
 
-        // Firebase listeners
+        // Callbacks
+        this.onRoomCreated = null;
+        this.onPlayerJoined = null;       // (userId, name)
+        this.onPlayerLeft = null;         // (userId)
+        this.onScoreUpdate = null;        // (playersObj)
+        this.onJoinRequest = null;        // Host only: (reqId, guestName)
+        this.onWaitingForHost = null;     // Guest only
+        this.onHostRejected = null;       // Guest only
+
+        // WebRTC Mesh Network
+        this.peerConnections = {}; // Key: userId, Value: RTCPeerConnection
+        this.localStream = null;
+        this.onTrackAdded = null;   // (userId, track, stream)
+        this.onTrackRemoved = null; // (userId)
         this._listeners = [];
 
-        // WebRTC properties
-        this.peerConnection = null;
-        this.localStream = null;
-        this.remoteStream = null;
-        this.rtcConfig = {
+        this.iceServers = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' }
             ]
         };
-        this.webrtcUnsubs = [];
-
-        // Admin Approval State
-        this.pendingGuestId = null;
-        this.pendingGuestName = null;
-
-        // Callbacks
-        this.onRoomCreated = null;
-        this.onPlayerJoined = null;
-        this.onOpponentLeft = null;
-        this.onScoreUpdate = null;
-        this.onJoinRequest = null;
-        this.onWaitingForHost = null;
-        this.onHostRejected = null;
-        this.onRemoteStreamReady = null;
-    }
-
-    get currentColor() {
-        return HOLI_COLORS[this.currentColorIndex];
     }
 
     nextColor() {
+        this.currentColor = HOLI_COLORS[this.currentColorIndex];
         this.currentColorIndex = (this.currentColorIndex + 1) % HOLI_COLORS.length;
     }
 
@@ -157,75 +110,64 @@ class HoliPartyMode {
         return code;
     }
 
-    async createRoom(playerName = 'Player 1') {
+    async createRoom(uid, playerName) {
         this.roomCode = this._generateRoomCode();
-        this.playerId = 'player1';
+        this.playerId = uid;
         this.playerName = playerName;
         this.isHost = true;
+        this.myScore = 0;
+        this.players = {};
 
         const roomRef = ref(db, `rooms/${this.roomCode}`);
 
-        const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Connection timeout! Is the Firebase databaseURL correct in firebase-config.js?")), 5000)
-        );
+        await set(roomRef, {
+            hostId: this.playerId,
+            status: 'active',
+            createdAt: Date.now()
+        });
 
-        await Promise.race([
-            set(roomRef, {
-                players: {
-                    player1: { name: playerName, score: 0, online: true }
-                },
-                status: 'waiting',
-                createdAt: Date.now()
-            }),
-            timeoutPromise
-        ]);
+        // Add self to players
+        await set(ref(db, `rooms/${this.roomCode}/players/${this.playerId}`), {
+            name: this.playerName,
+            score: 0,
+            online: true,
+            joinedAt: Date.now()
+        });
 
         await this._setupLocalStream();
 
         this._listenForJoinRequests();
-        this._listenForOpponent();
+        this._listenForPlayers();
         this._listenForThrows();
+        this._listenForSignals();
 
         if (this.onRoomCreated) this.onRoomCreated(this.roomCode);
         return this.roomCode;
     }
 
-    async joinRoom(roomCode, playerName = 'Player 2') {
+    async joinRoom(roomCode, uid, playerName) {
         this.roomCode = roomCode.toUpperCase();
-        this.playerId = 'player2';
+        this.playerId = uid;
         this.playerName = playerName;
         this.isHost = false;
+        this.myScore = 0;
+        this.players = {};
 
-        // Check if room exists
         const roomRef = ref(db, `rooms/${this.roomCode}`);
+        const snapshot = await get(roomRef);
 
-        const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Connection timeout! Is the Firebase databaseURL correct in firebase-config.js?")), 5000)
-        );
-
-        const snapshot = await Promise.race([get(roomRef), timeoutPromise]);
         if (!snapshot.exists()) {
             throw new Error('Room not found!');
         }
 
-        const data = snapshot.val();
-        if (data.players?.player2) {
-            throw new Error('Room is full!');
-        }
-
-        // Get host name
-        if (data.players?.player1) {
-            this.opponentName = data.players.player1.name || 'Player 1';
-            this.opponentOnline = true;
-        }
-
         await this._setupLocalStream();
 
-        // Write join request for Admin Approval
+        // Write join request
         const requestRef = ref(db, `rooms/${this.roomCode}/join_requests/${this.playerId}`);
         await set(requestRef, {
-            name: playerName,
-            status: 'pending'
+            name: this.playerName,
+            status: 'pending',
+            timestamp: Date.now()
         });
 
         if (this.onWaitingForHost) this.onWaitingForHost();
@@ -238,11 +180,20 @@ class HoliPartyMode {
 
                 if (reqStatus === 'accepted') {
                     unsub();
-                    await this._setupWebRTC();
-                    this._listenForOpponent();
+
+                    // Add self to players list
+                    await set(ref(db, `rooms/${this.roomCode}/players/${this.playerId}`), {
+                        name: this.playerName,
+                        score: 0,
+                        online: true,
+                        joinedAt: Date.now()
+                    });
+
+                    this._listenForPlayers();
                     this._listenForThrows();
-                    this._listenForOffer();
-                    if (this.onPlayerJoined) this.onPlayerJoined(this.opponentName);
+                    this._listenForSignals();
+
+                    if (this.onPlayerJoined) this.onPlayerJoined(this.playerId, this.playerName);
                     resolve();
                 } else if (reqStatus === 'denied') {
                     unsub();
@@ -254,49 +205,69 @@ class HoliPartyMode {
         });
     }
 
-    _listenForOpponent() {
-        const opponentId = this.playerId === 'player1' ? 'player2' : 'player1';
-        const opponentRef = ref(db, `rooms/${this.roomCode}/players/${opponentId}`);
+    // ===================================
+    // Player State Sync
+    // ===================================
 
-        const unsub = onValue(opponentRef, (snapshot) => {
-            if (snapshot.exists()) {
-                const data = snapshot.val();
-                this.opponentName = data.name || opponentId;
-                this.opponentOnline = data.online;
-                this.opponentScore = data.score || 0;
-                if (this.onPlayerJoined) this.onPlayerJoined(this.opponentName);
-                if (this.onScoreUpdate) this.onScoreUpdate(this.myScore, this.opponentScore);
-            } else {
-                this.opponentOnline = false;
-                if (this.onOpponentLeft) this.onOpponentLeft();
+    _listenForPlayers() {
+        const playersRef = ref(db, `rooms/${this.roomCode}/players`);
+        const unsub = onValue(playersRef, (snapshot) => {
+            if (!snapshot.exists()) return;
+            const currentPlayers = snapshot.val();
+
+            // Detect new players
+            for (const uid in currentPlayers) {
+                if (!this.players[uid]) {
+                    this.players[uid] = currentPlayers[uid];
+                    if (uid !== this.playerId) {
+                        if (this.onPlayerJoined) this.onPlayerJoined(uid, currentPlayers[uid].name);
+
+                        // MESH LOGIC: If the remote player joined AFTER me, I create the offer to them.
+                        // This prevents both sides trying to create an offer at the same time.
+                        if (currentPlayers[uid].joinedAt > this.players[this.playerId].joinedAt) {
+                            this._createOffer(uid);
+                        }
+                    }
+                } else {
+                    // Update scores
+                    this.players[uid] = currentPlayers[uid];
+                }
             }
+
+            // Detect dropped players
+            for (const uid in this.players) {
+                if (!currentPlayers[uid] || !currentPlayers[uid].online) {
+                    if (this.onPlayerLeft) this.onPlayerLeft(uid);
+                    this._cleanupPeer(uid);
+                    delete this.players[uid];
+                }
+            }
+
+            if (this.onScoreUpdate) this.onScoreUpdate(this.players);
         });
         this._listeners.push(unsub);
     }
 
     _listenForThrows() {
         const throwsRef = ref(db, `rooms/${this.roomCode}/throws`);
-
         const unsub = onChildAdded(throwsRef, (snapshot) => {
             const data = snapshot.val();
-            if (data.from === this.playerId) return; // Ignore own throws
+            if (data.from === this.playerId) return;
 
             if (data.type === 'powder') {
-                // Opponent threw color powder — show explosion on our screen
                 const x = data.x * this.canvasWidth;
                 const y = data.y * this.canvasHeight;
                 this.particles.emitPowderBurst(x, y, data.color, 40, 0, 0, data.force || 0.8);
             } else if (data.type === 'balloon') {
-                // Opponent threw water balloon — animate it flying in
                 const targetX = data.x * this.canvasWidth;
                 const targetY = data.y * this.canvasHeight;
                 this.flyingBalloons.push(
                     new FlyingBalloon(null, targetX, targetY, data.color, this.canvasWidth, this.canvasHeight)
                 );
             }
-
-            // Remove processed throw
-            remove(snapshot.ref);
+            // Throw cleanup logic could be handled by Host to prevent N deletes, 
+            // but for safety we'll just let anyone delete if they process it first, Firebase handles concurrency.
+            remove(snapshot.ref).catch(() => { });
         });
         this._listeners.push(unsub);
     }
@@ -307,7 +278,7 @@ class HoliPartyMode {
         const throwsRef = ref(db, `rooms/${this.roomCode}/throws`);
         await push(throwsRef, {
             from: this.playerId,
-            type: type, // 'powder' or 'balloon'
+            type: type,
             x: position.x / this.canvasWidth,
             y: position.y / this.canvasHeight,
             color: color,
@@ -315,38 +286,27 @@ class HoliPartyMode {
             timestamp: Date.now()
         });
 
-        // Update score
         this.myScore++;
         const playerRef = ref(db, `rooms/${this.roomCode}/players/${this.playerId}`);
         await update(playerRef, { score: this.myScore });
-        if (this.onScoreUpdate) this.onScoreUpdate(this.myScore, this.opponentScore);
     }
 
-    activate() {
-        this.isActive = true;
-    }
-
-    deactivate() {
-        this.isActive = false;
-    }
-
+    activate() { this.isActive = true; }
+    deactivate() { this.isActive = false; }
     resize(w, h) {
         this.canvasWidth = w;
         this.canvasHeight = h;
     }
 
     setupGestures(gestureDetector) {
-        // Palm → Fist = Throw color powder at friend
         gestureDetector.onGestureTransition(GESTURES.OPEN_PALM, GESTURES.FIST, (data) => {
             if (!this.isActive || !this.roomCode) return;
             const color = this.currentColor;
-            // Show local effect too
             this.particles.emitPowderBurst(data.position.x, data.position.y, color, 20, 0, 0, 0.5);
             this._sendThrow('powder', data.position, color, 0.8);
             this.nextColor();
         });
 
-        // Pinch → Open Palm = Throw water balloon at friend
         gestureDetector.onGestureTransition(GESTURES.PINCH, GESTURES.OPEN_PALM, (data) => {
             if (!this.isActive || !this.roomCode) return;
             const color = randomHoliColor();
@@ -356,17 +316,12 @@ class HoliPartyMode {
 
     update(gesture, position) {
         if (!this.isActive) return;
-
-        // Charge effect for powder
         if (gesture === GESTURES.OPEN_PALM && position) {
             this.particles.emitCharge(position.x, position.y, this.currentColor);
         }
-
-        // Update flying balloons (incoming from opponent)
         this.flyingBalloons = this.flyingBalloons.filter(b => {
             const alive = b.update();
             if (b.burst) {
-                // SPLAT! Water burst at impact point
                 this.particles.emitWaterBurst(b.targetX, b.targetY, b.color, this.canvasHeight, 60);
             }
             return alive;
@@ -375,64 +330,43 @@ class HoliPartyMode {
 
     draw(ctx) {
         if (!this.isActive) return;
-        // Draw flying balloons
-        for (const b of this.flyingBalloons) {
-            b.draw(ctx);
-        }
+        for (const b of this.flyingBalloons) b.draw(ctx);
     }
 
     // ===================================
-    // Admin Approval & WebRTC Networking
+    // Admin Approval
     // ===================================
-
     _listenForJoinRequests() {
         const requestsRef = ref(db, `rooms/${this.roomCode}/join_requests`);
         const unsub = onChildAdded(requestsRef, (snapshot) => {
             const val = snapshot.val();
             if (val.status === 'pending') {
-                this.pendingGuestId = snapshot.key;
-                this.pendingGuestName = val.name;
-                if (this.onJoinRequest) this.onJoinRequest(val.name);
+                if (this.onJoinRequest) this.onJoinRequest(snapshot.key, val.name);
             }
         });
         this._listeners.push(unsub);
     }
 
-    async acceptJoinRequest() {
-        if (!this.pendingGuestId) return;
-
-        // Move to players
-        await update(ref(db, `rooms/${this.roomCode}/players`), {
-            [this.pendingGuestId]: { name: this.pendingGuestName, score: 0, online: true }
-        });
-
-        // Update request status
-        await update(ref(db, `rooms/${this.roomCode}/join_requests/${this.pendingGuestId}`), {
+    async acceptJoinRequest(reqId) {
+        await update(ref(db, `rooms/${this.roomCode}/join_requests/${reqId}`), {
             status: 'accepted'
         });
-
-        this.opponentName = this.pendingGuestName;
-
-        await this._setupWebRTC();
-        await this._createOffer();
-
-        this.pendingGuestId = null;
-        this.pendingGuestName = null;
-
-        if (this.onPlayerJoined) this.onPlayerJoined(this.opponentName);
     }
 
-    async denyJoinRequest() {
-        if (!this.pendingGuestId) return;
-        await update(ref(db, `rooms/${this.roomCode}/join_requests/${this.pendingGuestId}`), {
+    async denyJoinRequest(reqId) {
+        await update(ref(db, `rooms/${this.roomCode}/join_requests/${reqId}`), {
             status: 'denied'
         });
-        this.pendingGuestId = null;
     }
+
+    // ===================================
+    // WebRTC Mesh Networking
+    // ===================================
 
     async _setupLocalStream() {
         try {
             this.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            // Let the App handle drawing the local UI stream via camera.js, we just need the tracks
         } catch (e) {
             console.warn("Camera/Mic access denied for WebRTC", e);
         }
@@ -443,129 +377,145 @@ class HoliPartyMode {
             const audioTrack = this.localStream.getAudioTracks()[0];
             if (audioTrack) {
                 audioTrack.enabled = !audioTrack.enabled;
-                return !audioTrack.enabled; // returns true if muted
+                return !audioTrack.enabled;
             }
         }
         return false;
     }
 
-    async _setupWebRTC() {
-        this.peerConnection = new RTCPeerConnection(this.rtcConfig);
+    _getPeerConnection(remoteUid) {
+        if (this.peerConnections[remoteUid]) {
+            return this.peerConnections[remoteUid];
+        }
+
+        console.log(`Creating PeerConnection for ${remoteUid}`);
+        const pc = new RTCPeerConnection(this.iceServers);
+        this.peerConnections[remoteUid] = pc;
 
         // Add local tracks
         if (this.localStream) {
-            this.localStream.getTracks().forEach(track => {
-                this.peerConnection.addTrack(track, this.localStream);
-            });
+            this.localStream.getTracks().forEach(track => pc.addTrack(track, this.localStream));
         }
 
-        // Receive remote tracks
-        this.peerConnection.ontrack = (event) => {
-            if (event.streams && event.streams[0]) {
-                this.remoteStream = event.streams[0];
-                if (this.onRemoteStreamReady) this.onRemoteStreamReady(this.remoteStream);
+        // Handle remote tracks
+        pc.ontrack = (event) => {
+            if (this.onTrackAdded) {
+                this.onTrackAdded(remoteUid, event.track, event.streams[0]);
             }
         };
 
         // Handle ICE candidates
-        this.peerConnection.onicecandidate = (event) => {
+        pc.onicecandidate = (event) => {
             if (event.candidate) {
-                const candidatesRef = ref(db, `rooms/${this.roomCode}/webrtc/candidates/${this.playerId}`);
-                push(candidatesRef, event.candidate.toJSON());
+                const signalRef = ref(db, `rooms/${this.roomCode}/signals/${remoteUid}/${this.playerId}/candidates`);
+                push(signalRef, event.candidate.toJSON());
             }
         };
 
-        // Listen for remote ICE candidates
-        const opponentId = this.playerId === 'player1' ? 'player2' : 'player1';
-        const remoteCandidatesRef = ref(db, `rooms/${this.roomCode}/webrtc/candidates/${opponentId}`);
-        const unsubCand = onChildAdded(remoteCandidatesRef, (snapshot) => {
-            if (this.peerConnection && this.peerConnection.remoteDescription) {
-                this.peerConnection.addIceCandidate(new RTCIceCandidate(snapshot.val()));
-            } else {
-                // If remote description isn't set yet, store candidates and add them later
-                // For simplicity in this demo, we assume offer/answer completes fast enough.
-            }
-        });
-        this.webrtcUnsubs.push(unsubCand);
+        return pc;
     }
 
-    async _createOffer() {
-        // Host creates offer
-        const offer = await this.peerConnection.createOffer();
-        await this.peerConnection.setLocalDescription(offer);
+    _cleanupPeer(remoteUid) {
+        if (this.peerConnections[remoteUid]) {
+            this.peerConnections[remoteUid].close();
+            delete this.peerConnections[remoteUid];
+        }
+        if (this.onTrackRemoved) {
+            this.onTrackRemoved(remoteUid);
+        }
+    }
 
-        await set(ref(db, `rooms/${this.roomCode}/webrtc/offer`), {
+    // Listens for SDP offers, answers, and ICE candidates directed at ME
+    _listenForSignals() {
+        const mySignalsRef = ref(db, `rooms/${this.roomCode}/signals/${this.playerId}`);
+
+        const unsub = onChildAdded(mySignalsRef, async (snapshot) => {
+            const senderUid = snapshot.key; // Who is sending to me
+
+            // Listen to their offer
+            const offerRef = ref(db, `rooms/${this.roomCode}/signals/${this.playerId}/${senderUid}/offer`);
+            onValue(offerRef, async (offerSnap) => {
+                if (offerSnap.exists()) {
+                    const offer = offerSnap.val();
+                    const pc = this._getPeerConnection(senderUid);
+                    if (pc.signalingState !== "stable") return; // Already negotiating
+
+                    await pc.setRemoteDescription(new RTCSessionDescription(offer));
+                    const answer = await pc.createAnswer();
+                    await pc.setLocalDescription(answer);
+
+                    // Send answer back
+                    await set(ref(db, `rooms/${this.roomCode}/signals/${senderUid}/${this.playerId}/answer`), {
+                        type: answer.type,
+                        sdp: answer.sdp
+                    });
+                }
+            });
+
+            // Listen to their answer
+            const answerRef = ref(db, `rooms/${this.roomCode}/signals/${this.playerId}/${senderUid}/answer`);
+            onValue(answerRef, async (ansSnap) => {
+                if (ansSnap.exists()) {
+                    const answer = ansSnap.val();
+                    const pc = this._getPeerConnection(senderUid);
+                    if (pc.signalingState === "have-local-offer") {
+                        await pc.setRemoteDescription(new RTCSessionDescription(answer));
+                    }
+                }
+            });
+
+            // Listen to their ICE candidates
+            const candidatesRef = ref(db, `rooms/${this.roomCode}/signals/${this.playerId}/${senderUid}/candidates`);
+            onChildAdded(candidatesRef, async (candSnap) => {
+                const candidate = candSnap.val();
+                const pc = this._getPeerConnection(senderUid);
+                try {
+                    await pc.addIceCandidate(new RTCIceCandidate(candidate));
+                } catch (e) { console.error("Error adding ICE candidate", e); }
+            });
+        });
+        this._listeners.push(unsub);
+    }
+
+    async _createOffer(remoteUid) {
+        const pc = this._getPeerConnection(remoteUid);
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        await set(ref(db, `rooms/${this.roomCode}/signals/${remoteUid}/${this.playerId}/offer`), {
             type: offer.type,
             sdp: offer.sdp
         });
-
-        // Listen for answer
-        const answerRef = ref(db, `rooms/${this.roomCode}/webrtc/answer`);
-        const unsubAns = onValue(answerRef, async (snapshot) => {
-            if (snapshot.exists()) {
-                const answer = snapshot.val();
-                if (!this.peerConnection.currentRemoteDescription) {
-                    await this.peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-                }
-            }
-        });
-        this.webrtcUnsubs.push(unsubAns);
     }
 
-    async _listenForOffer() {
-        // Guest listens for offer
-        const offerRef = ref(db, `rooms/${this.roomCode}/webrtc/offer`);
-        const unsubOffer = onValue(offerRef, async (snapshot) => {
-            if (snapshot.exists() && this.peerConnection && !this.peerConnection.currentRemoteDescription) {
-                const offer = snapshot.val();
-                await this.peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-
-                // Create answer
-                const answer = await this.peerConnection.createAnswer();
-                await this.peerConnection.setLocalDescription(answer);
-
-                await set(ref(db, `rooms/${this.roomCode}/webrtc/answer`), {
-                    type: answer.type,
-                    sdp: answer.sdp
-                });
-            }
-        });
-        this.webrtcUnsubs.push(unsubOffer);
-    }
-
-    async leaveRoom() {
+    leaveRoom() {
+        // Remove self from room players
         if (this.roomCode && this.playerId) {
-            try {
-                const playerRef = ref(db, `rooms/${this.roomCode}/players/${this.playerId}`);
-                await update(playerRef, { online: false });
-            } catch (e) { /* ignore */ }
+            remove(ref(db, `rooms/${this.roomCode}/players/${this.playerId}`));
+            // Remove signaling data sent to/from us
+            remove(ref(db, `rooms/${this.roomCode}/signals/${this.playerId}`));
         }
 
-        // Cleanup WebRTC
-        if (this.peerConnection) {
-            this.peerConnection.close();
-            this.peerConnection = null;
+        // Close all peer connections
+        for (const uid in this.peerConnections) {
+            this._cleanupPeer(uid);
         }
+
         if (this.localStream) {
-            this.localStream.getTracks().forEach(track => track.stop());
-            this.localStream = null;
+            this.localStream.getTracks().forEach(t => t.stop());
         }
-        this.webrtcUnsubs.forEach(unsub => {
-            if (typeof unsub === 'function') unsub();
-        });
-        this.webrtcUnsubs = [];
 
-        // Clean up listeners
-        this._listeners.forEach(unsub => {
-            if (typeof unsub === 'function') unsub();
-        });
+        this._listeners.forEach(unsub => unsub());
         this._listeners = [];
         this.roomCode = null;
-        this.playerId = null;
-        this.myScore = 0;
-        this.opponentScore = 0;
-        this.flyingBalloons = [];
+        this.isActive = false;
+        this.players = {};
     }
 }
 
-export { HoliPartyMode };
+// Utility for dynamic colors
+function randomHoliColor() {
+    return HOLI_COLORS[Math.floor(Math.random() * HOLI_COLORS.length)];
+}
+
+export { HoliPartyMode, HOLI_COLORS };

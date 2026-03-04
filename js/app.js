@@ -9,6 +9,7 @@ import { ColorSplashMode } from './colorSplash.js';
 import { BalloonBurstMode } from './balloonBurst.js';
 import { HoliPartyMode } from './holiParty.js';
 import { AuthManager } from './auth.js';
+import { SocialManager } from './social.js';
 
 const MODES = {
     SPLASH: 'splash',
@@ -60,23 +61,37 @@ class App {
         this.friendScoreDisplay = document.getElementById('friendScore');
         this.partyScoreboard = document.getElementById('partyScoreboard');
 
+        // Expose globally for inline DOM clicks (like inviting friends)
+        window.app = this;
+
         // Authentication Management
+        this.socialManager = null;
         this.authManager = new AuthManager((user) => {
             this.partyMode.playerName = user.displayName || user.phoneNumber;
+
+            // Initialize social features
+            if (!this.socialManager) {
+                this.socialManager = new SocialManager(user);
+            }
+
             // Only start the game loop completely if logged in
             if (!this.isRunning) {
                 this.isRunning = true;
                 this._switchMode(MODES.SPLASH);
                 this._buildColorPalette();
                 this._gameLoop();
+                this._listenForInvites(user.phoneNumber.replace('+', ''));
             }
         });
 
         // WebRTC & Audio/Video UI
         this.videoChatContainer = document.getElementById('videoChatContainer');
-        this.remoteVideo = document.getElementById('remoteVideo');
-        this.remoteUserName = document.getElementById('remoteUserName');
+        this.videoGrid = document.getElementById('videoGrid');
         this.toggleMicBtn = document.getElementById('toggleMicBtn');
+        this.toggleParticipantsBtn = document.getElementById('toggleParticipantsBtn');
+        this.roomParticipantsSidebar = document.getElementById('roomParticipantsSidebar');
+        this.closeParticipantsBtn = document.getElementById('closeParticipantsBtn');
+        this.roomParticipantsList = document.getElementById('roomParticipantsList');
 
         // Approval UI
         this.joinRequestOverlay = document.getElementById('joinRequestOverlay');
@@ -115,6 +130,13 @@ class App {
         this.denyRequestBtn?.addEventListener('click', () => {
             this.partyMode?.denyJoinRequest();
             this.joinRequestOverlay.classList.add('hidden');
+        });
+        this.toggleParticipantsBtn.addEventListener('click', () => {
+            this.roomParticipantsSidebar.classList.toggle('hidden');
+        });
+
+        this.closeParticipantsBtn.addEventListener('click', () => {
+            this.roomParticipantsSidebar.classList.add('hidden');
         });
         this.toggleMicBtn?.addEventListener('click', () => {
             if (this.partyMode) {
@@ -225,28 +247,36 @@ class App {
                 this.leaveRoomBtn.classList.remove('hidden');
             };
 
-            this.partyMode.onPlayerJoined = (name) => {
-                this.partyStatus.textContent = `🎉 ${name} joined! Let's play Holi!`;
+            this.partyMode.onPlayerJoined = (uid, name) => {
+                this.partyStatus.textContent = `🎉 ${name} joined!`;
                 this.partyStatus.className = 'party-status connected';
                 this.partyScoreboard.classList.remove('hidden');
+                this._renderParticipantsList();
+                this._updateGridLayout();
             };
 
-            this.partyMode.onOpponentLeft = () => {
-                this.partyStatus.textContent = '😢 Friend disconnected';
-                this.partyStatus.className = 'party-status waiting';
-                this.videoChatContainer.classList.add('hidden');
-                if (this.remoteVideo.srcObject) {
-                    this.remoteVideo.srcObject.getTracks().forEach(track => track.stop());
-                    this.remoteVideo.srcObject = null;
-                }
+            this.partyMode.onPlayerLeft = (uid) => {
+                this._removeVideoWrapper(uid);
+                this._renderParticipantsList();
+                this._updateGridLayout();
             };
 
-            this.partyMode.onScoreUpdate = (my, opponent) => {
-                if (this.myScoreDisplay) this.myScoreDisplay.textContent = my;
-                if (this.friendScoreDisplay) this.friendScoreDisplay.textContent = opponent;
+            this.partyMode.onScoreUpdate = (playersData) => {
+                // To keep it simple, we just show "You vs Room" or just our score for now
+                if (this.myScoreDisplay) this.myScoreDisplay.textContent = this.partyMode.myScore;
             };
 
-            // WebRTC & Approval Callbacks
+            // Audio/Video Setup
+            this.partyMode.onTrackAdded = (uid, track, stream) => {
+                this.videoChatContainer.classList.remove('hidden');
+                this._addVideoWrapper(uid, stream);
+                this._updateGridLayout();
+            };
+
+            this.partyMode.onTrackRemoved = (uid) => {
+                this._removeVideoWrapper(uid);
+                this._updateGridLayout();
+            };
             this.partyMode.onJoinRequest = (guestName) => {
                 this.requestName.textContent = guestName;
                 this.joinRequestOverlay.classList.remove('hidden');
@@ -261,14 +291,6 @@ class App {
                 this.partyStatus.textContent = '❌ Request denied by host.';
                 this.partyStatus.className = 'party-status waiting';
                 this._leaveRoom();
-            };
-
-            this.partyMode.onRemoteStreamReady = (stream) => {
-                this.remoteUserName.textContent = this.partyMode.opponentName || 'Friend';
-                this.videoChatContainer.classList.remove('hidden');
-                setTimeout(() => {
-                    this.remoteVideo.srcObject = stream;
-                }, 100);
             };
 
             // Game loop will start ONLY after AuthManager completes login via its callback
@@ -427,17 +449,17 @@ class App {
         ctx.restore();
     }
 
-    _switchMode(mode) {
+    _switchMode(modeCode) {
         // Deactivate all
         this.splashMode.deactivate();
         if (this.balloonMode) this.balloonMode.deactivate();
         if (this.partyMode) this.partyMode.deactivate();
 
-        this.currentMode = mode;
+        this.currentMode = modeCode;
 
         // Update UI buttons
         this.modeButtons.forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.mode === mode);
+            btn.classList.toggle('active', btn.dataset.mode === modeCode);
         });
 
         // Show/hide mode-specific panels
@@ -445,12 +467,12 @@ class App {
         const balloonUI = document.getElementById('balloonUI');
         const partyUI = document.getElementById('partyUI');
 
-        splashUI?.classList.toggle('hidden', mode !== MODES.SPLASH);
-        balloonUI?.classList.toggle('hidden', mode !== MODES.BALLOON);
-        partyUI?.classList.toggle('hidden', mode !== MODES.PARTY);
+        splashUI?.classList.toggle('hidden', modeCode !== MODES.SPLASH);
+        balloonUI?.classList.toggle('hidden', modeCode !== MODES.BALLOON);
+        partyUI?.classList.toggle('hidden', modeCode !== MODES.PARTY);
 
         // Activate selected mode
-        switch (mode) {
+        switch (modeCode) {
             case MODES.SPLASH:
                 this.splashMode.activate();
                 break;
@@ -458,7 +480,14 @@ class App {
                 this.balloonMode.activate();
                 break;
             case MODES.PARTY:
+                // Require login first
+                if (!this.socialManager || !this.socialManager.user) {
+                    alert("Please log in first to play Holi Party!");
+                    this._switchMode(MODES.SPLASH);
+                    return;
+                }
                 this.partyMode.activate();
+                this.partyPanel.classList.remove('hidden');
                 break;
         }
 
@@ -512,10 +541,12 @@ class App {
 
     async _createRoom() {
         try {
-            const name = prompt('Enter your name:') || 'Player 1';
-            await this.partyMode.createRoom(name);
+            this.createRoomBtn.disabled = true;
+            await this.partyMode.createRoom(this.socialManager.uid, this.partyMode.playerName);
         } catch (err) {
             alert('Failed to create room: ' + err.message);
+        } finally {
+            this.createRoomBtn.disabled = false;
         }
     }
 
@@ -526,8 +557,8 @@ class App {
                 alert('Please enter a valid 6-character room code!');
                 return;
             }
-            const name = prompt('Enter your name:') || 'Player 2';
-            await this.partyMode.joinRoom(code, name);
+            this.joinRoomBtn.disabled = true;
+            await this.partyMode.joinRoom(code, this.socialManager.uid, this.partyMode.playerName);
             this.roomCodeInput.classList.add('hidden');
             this.createRoomBtn.classList.add('hidden');
             this.joinRoomBtn.classList.add('hidden');
@@ -537,6 +568,8 @@ class App {
             this.partyScoreboard.classList.remove('hidden');
         } catch (err) {
             alert(err.message);
+        } finally {
+            this.joinRoomBtn.disabled = false;
         }
     }
 
@@ -608,6 +641,115 @@ class App {
         if (nextBtn) nextBtn.classList.toggle('hidden', isLast);
         if (startBtn) startBtn.classList.toggle('hidden', !isLast);
     }
+
+    // ===================================
+    // Grid Video Handlers
+    // ===================================
+    _addVideoWrapper(uid, stream) {
+        if (document.getElementById(`wrapper-${uid}`)) return;
+
+        const wrapper = document.createElement('div');
+        wrapper.id = `wrapper-${uid}`;
+        wrapper.className = 'remote-video-wrapper';
+
+        const video = document.createElement('video');
+        video.id = `video-${uid}`;
+        video.autoplay = true;
+        video.playsInline = true;
+        video.srcObject = stream;
+
+        const label = document.createElement('div');
+        label.className = 'video-label';
+        // Get name from players dict
+        const pName = this.partyMode.players[uid]?.name || 'Friend';
+        label.textContent = pName;
+
+        wrapper.appendChild(video);
+        wrapper.appendChild(label);
+        this.videoGrid.appendChild(wrapper);
+    }
+
+    _removeVideoWrapper(uid) {
+        const wrapper = document.getElementById(`wrapper-${uid}`);
+        if (wrapper) {
+            const video = document.getElementById(`video-${uid}`);
+            if (video && video.srcObject) {
+                video.srcObject.getTracks().forEach(t => t.stop());
+            }
+            wrapper.remove();
+        }
+    }
+
+    _updateGridLayout() {
+        const numConnections = this.videoGrid.children.length;
+        this.videoGrid.className = 'video-grid'; // Reset classes
+
+        if (numConnections === 1) this.videoGrid.classList.add('grid-1');
+        else if (numConnections === 2) this.videoGrid.classList.add('grid-2');
+        else if (numConnections <= 4) this.videoGrid.classList.add('grid-3');
+        else if (numConnections <= 6) this.videoGrid.classList.add('grid-5');
+        else if (numConnections > 0) this.videoGrid.classList.add('grid-more');
+        else this.videoChatContainer.classList.add('hidden');
+    }
+
+    _renderParticipantsList() {
+        this.roomParticipantsList.innerHTML = '';
+        for (const uid in this.partyMode.players) {
+            const p = this.partyMode.players[uid];
+            const div = document.createElement('div');
+            div.className = 'flex items-center justify-between bg-black bg-opacity-30 rounded p-2';
+            div.innerHTML = `
+                  <div class="flex items-center gap-2">
+                       <div class="presence-dot inline-block ${p.online ? 'bg-holi-green' : 'bg-gray-500'} w-3 h-3 rounded-full border border-black"></div>
+                       <span class="text-sm">${p.name} ${uid === this.socialManager.uid ? '(You)' : ''}</span>
+                  </div>
+              `;
+            this.roomParticipantsList.appendChild(div);
+        }
+    }
+
+    // ===================================
+    // Social / Invites handling
+    // ===================================
+    async inviteFriend(friendId) {
+        if (!this.partyMode || !this.partyMode.roomCode) {
+            // Auto-create room if not in one
+            await this._createRoom();
+        }
+
+        try {
+            const { ref, set } = await import('./firebase-config.js');
+            const { db } = await import('./firebase-config.js');
+            await set(ref(db, `users/${friendId}/invites/${new Date().getTime()}`), {
+                from: this.socialManager.uid,
+                fromName: this.partyMode.playerName,
+                roomCode: this.partyMode.roomCode,
+                timestamp: Date.now()
+            });
+            alert(`Invite sent to friend! Room code: ${this.partyMode.roomCode}`);
+        } catch (e) {
+            console.error('Failed to send invite', e);
+        }
+    }
+
+    _listenForInvites(myUid) {
+        import('./firebase-config.js').then(({ db, ref, onChildAdded, remove }) => {
+            const inviteRef = ref(db, `users/${myUid}/invites`);
+            onChildAdded(inviteRef, (snapshot) => {
+                const invite = snapshot.val();
+                if (Date.now() - invite.timestamp < 60000) { // Only show fresh invites
+                    if (confirm(`${invite.fromName} invited you to play Holi! Join room ${invite.roomCode}?`)) {
+                        this.roomCodeInput.value = invite.roomCode;
+                        this.partyPanel.classList.remove('hidden');
+                        this._joinRoom();
+                    }
+                }
+                // Delete after reading
+                remove(ref(db, `users/${myUid}/invites/${snapshot.key}`));
+            });
+        });
+    }
+
 }
 
 // Boot the app
