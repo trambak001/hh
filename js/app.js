@@ -8,6 +8,7 @@ import { ParticleManager, HOLI_COLORS } from './particles.js';
 import { ColorSplashMode } from './colorSplash.js';
 import { BalloonBurstMode } from './balloonBurst.js';
 import { HoliPartyMode } from './holiParty.js';
+import { AuthManager } from './auth.js';
 
 const MODES = {
     SPLASH: 'splash',
@@ -58,6 +59,18 @@ class App {
         this.myScoreDisplay = document.getElementById('myScore');
         this.friendScoreDisplay = document.getElementById('friendScore');
         this.partyScoreboard = document.getElementById('partyScoreboard');
+
+        // Authentication Management
+        this.authManager = new AuthManager((user) => {
+            this.partyMode.playerName = user.displayName || user.phoneNumber;
+            // Only start the game loop completely if logged in
+            if (!this.isRunning) {
+                this.isRunning = true;
+                this._switchMode(MODES.SPLASH);
+                this._buildColorPalette();
+                this._gameLoop();
+            }
+        });
 
         // WebRTC & Audio/Video UI
         this.videoChatContainer = document.getElementById('videoChatContainer');
@@ -258,11 +271,8 @@ class App {
                 }, 100);
             };
 
-            this.isRunning = true;
-            this._switchMode(MODES.SPLASH);
-            this._buildColorPalette();
-            this._gameLoop();
-            console.log('🎨 Virtual Holi started successfully!');
+            // Game loop will start ONLY after AuthManager completes login via its callback
+            console.log('🎨 Virtual Holi core initialized. Waiting for Auth...');
 
             // Show tutorial for first-time players
             if (!localStorage.getItem('holi_tutorial_done')) {

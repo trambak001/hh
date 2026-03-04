@@ -1407,3 +1407,143 @@ body {
     background: rgba(124, 77, 255, 0.3);
     transform: scale(1.1);
 }
+
+/* =========================================
+   Authentication Overlay (Phase 6)
+   ========================================= */
+.auth-overlay {
+    position: fixed;
+    inset: 0;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    background: rgba(10, 5, 20, 0.95);
+    z-index: 2500;
+    /* Above everything */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 32px 24px;
+    text-align: center;
+    animation: slideUpFade 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.auth-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+    background: linear-gradient(90deg, var(--holi-pink), var(--holi-orange));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.auth-subtitle {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    margin-bottom: 24px;
+}
+
+.input-group {
+    text-align: left;
+    margin-bottom: 16px;
+}
+
+.auth-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.auth-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    color: var(--text-light);
+    font-family: var(--font-primary);
+    font-size: 1.1rem;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.auth-input:focus {
+    border-color: var(--holi-pink);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 15px rgba(255, 0, 128, 0.2);
+}
+
+.otp-digit-input {
+    text-align: center;
+    letter-spacing: 10px;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.otp-sent-msg {
+    color: var(--holi-green);
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+    font-weight: 500;
+}
+
+.auth-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 1.1rem;
+    margin-top: 8px;
+}
+
+.auth-btn.secondary-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-light);
+}
+
+.auth-btn.secondary-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.mt-2 {
+    margin-top: 12px;
+}
+
+.recaptcha-wrapper {
+    display: flex;
+    justify-content: center;
+    margin: 16px 0;
+    min-height: 78px;
+    /* Standard reCAPTCHA height */
+}
+
+/* Auth specific messages */
+.auth-msg {
+    margin-top: 16px;
+    font-size: 0.85rem;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+}
+
+.auth-msg.error {
+    background: rgba(255, 0, 80, 0.1);
+    color: var(--holi-pink);
+    border: 1px solid rgba(255, 0, 80, 0.3);
+}
+
+.auth-msg.success {
+    background: rgba(0, 255, 128, 0.1);
+    color: var(--holi-green);
+    border: 1px solid rgba(0, 255, 128, 0.3);
+}

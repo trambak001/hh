@@ -47,6 +47,40 @@
     </div>
   </div>
 
+  <!-- ===== Authentication Overlay ===== -->
+  <div id="authOverlay" class="auth-overlay hidden">
+    <div class="auth-card glass">
+      <h2 class="auth-title">Welcome to Virtual Holi</h2>
+      <p class="auth-subtitle">Log in to play with friends</p>
+
+      <!-- Step 1: Phone Number Input -->
+      <div id="phoneInputStep">
+        <div class="input-group">
+          <label for="phoneNumberInput" class="auth-label">Phone Number</label>
+          <input type="tel" id="phoneNumberInput" class="auth-input" placeholder="+1 234 567 8900" autocomplete="tel">
+        </div>
+        <div id="recaptcha-container" class="recaptcha-wrapper"></div>
+        <button id="sendOtpBtn" class="btn primary-btn auth-btn">Send OTP</button>
+      </div>
+
+      <!-- Step 2: OTP Verification -->
+      <div id="otpInputStep" class="hidden">
+        <p class="otp-sent-msg">Code sent securely via SMS 💬</p>
+        <div class="input-group">
+          <label for="otpCodeInput" class="auth-label">Enter 6-digit Code</label>
+          <input type="text" id="otpCodeInput" class="auth-input otp-digit-input" placeholder="000000" maxlength="6"
+            autocomplete="one-time-code">
+        </div>
+        <button id="verifyOtpBtn" class="btn primary-btn auth-btn">Verify & Login</button>
+        <button id="backToPhoneBtn" class="btn secondary-btn auth-btn mt-2">Back to Phone Number</button>
+      </div>
+
+      <!-- Error / Success Messages -->
+      <p id="authErrorMsg" class="auth-msg error hidden"></p>
+      <p id="authSuccessMsg" class="auth-msg success hidden"></p>
+    </div>
+  </div>
+
   <!-- ===== First-Time Player Guide / Tutorial ===== -->
   <div id="tutorialOverlay" class="tutorial-overlay hidden">
     <div class="tutorial-card glass">

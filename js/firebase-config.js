@@ -2,6 +2,8 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js';
 import { getDatabase, ref, set, push, onChildAdded, onValue, remove, update, get } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js';
 
+import { getAuth, RecaptchaVerifier, signInWithPhoneNumber, onAuthStateChanged, signOut, updateProfile } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
+
 const firebaseConfig = {
     apiKey: "AIzaSyCarz1st48xxqhvbsJSc3Vp6rR_twqUfIk",
     authDomain: "virtual-holi-party.firebaseapp.com",
@@ -15,5 +17,6 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const auth = getAuth(app);
 
-export { db, ref, set, push, onChildAdded, onValue, remove, update, get };
+export { db, auth, ref, set, push, onChildAdded, onValue, remove, update, get, RecaptchaVerifier, signInWithPhoneNumber, onAuthStateChanged, signOut, updateProfile };
