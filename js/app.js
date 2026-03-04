@@ -59,6 +59,19 @@ class App {
         this.friendScoreDisplay = document.getElementById('friendScore');
         this.partyScoreboard = document.getElementById('partyScoreboard');
 
+        // WebRTC & Audio/Video UI
+        this.videoChatContainer = document.getElementById('videoChatContainer');
+        this.remoteVideo = document.getElementById('remoteVideo');
+        this.remoteUserName = document.getElementById('remoteUserName');
+        this.toggleMicBtn = document.getElementById('toggleMicBtn');
+
+        // Approval UI
+        this.joinRequestOverlay = document.getElementById('joinRequestOverlay');
+        this.requestName = document.getElementById('requestName');
+        this.acceptRequestBtn = document.getElementById('acceptRequestBtn');
+        this.denyRequestBtn = document.getElementById('denyRequestBtn');
+        this.waitingApprovalOverlay = document.getElementById('waitingApprovalOverlay');
+
         // Tutorial
         this.tutorialOverlay = document.getElementById('tutorialOverlay');
         this.tutorialStep = 0;
@@ -80,6 +93,28 @@ class App {
         this.createRoomBtn?.addEventListener('click', () => this._createRoom());
         this.joinRoomBtn?.addEventListener('click', () => this._joinRoom());
         this.leaveRoomBtn?.addEventListener('click', () => this._leaveRoom());
+
+        // WebRTC & Approval
+        this.acceptRequestBtn?.addEventListener('click', () => {
+            this.partyMode?.acceptJoinRequest();
+            this.joinRequestOverlay.classList.add('hidden');
+        });
+        this.denyRequestBtn?.addEventListener('click', () => {
+            this.partyMode?.denyJoinRequest();
+            this.joinRequestOverlay.classList.add('hidden');
+        });
+        this.toggleMicBtn?.addEventListener('click', () => {
+            if (this.partyMode) {
+                const isMuted = this.partyMode.toggleMic();
+                if (isMuted) {
+                    this.toggleMicBtn.classList.add('muted');
+                    this.toggleMicBtn.innerHTML = '<span class="icon">🔇</span>';
+                } else {
+                    this.toggleMicBtn.classList.remove('muted');
+                    this.toggleMicBtn.innerHTML = '<span class="icon">🎙️</span>';
+                }
+            }
+        });
 
         // Color palette clicks (Splash mode)
         this.colorPalette?.addEventListener('click', (e) => {
@@ -186,11 +221,41 @@ class App {
             this.partyMode.onOpponentLeft = () => {
                 this.partyStatus.textContent = '😢 Friend disconnected';
                 this.partyStatus.className = 'party-status waiting';
+                this.videoChatContainer.classList.add('hidden');
+                if (this.remoteVideo.srcObject) {
+                    this.remoteVideo.srcObject.getTracks().forEach(track => track.stop());
+                    this.remoteVideo.srcObject = null;
+                }
             };
 
             this.partyMode.onScoreUpdate = (my, opponent) => {
                 if (this.myScoreDisplay) this.myScoreDisplay.textContent = my;
                 if (this.friendScoreDisplay) this.friendScoreDisplay.textContent = opponent;
+            };
+
+            // WebRTC & Approval Callbacks
+            this.partyMode.onJoinRequest = (guestName) => {
+                this.requestName.textContent = guestName;
+                this.joinRequestOverlay.classList.remove('hidden');
+            };
+
+            this.partyMode.onWaitingForHost = () => {
+                this.waitingApprovalOverlay.classList.remove('hidden');
+            };
+
+            this.partyMode.onHostRejected = () => {
+                this.waitingApprovalOverlay.classList.add('hidden');
+                this.partyStatus.textContent = '❌ Request denied by host.';
+                this.partyStatus.className = 'party-status waiting';
+                this._leaveRoom();
+            };
+
+            this.partyMode.onRemoteStreamReady = (stream) => {
+                this.remoteUserName.textContent = this.partyMode.opponentName || 'Friend';
+                this.videoChatContainer.classList.remove('hidden');
+                setTimeout(() => {
+                    this.remoteVideo.srcObject = stream;
+                }, 100);
             };
 
             this.isRunning = true;

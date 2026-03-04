@@ -255,6 +255,49 @@
       </div>
     </main>
 
+    <!-- Notification Toast -->
+    <div id="toast" class="toast hidden">
+      <div class="toast-content" id="toastMessage"></div>
+    </div>
+
+    <!-- Video Call Overlays -->
+    <div id="videoChatContainer" class="video-chat-container hidden">
+      <div id="remoteVideoWrapper" class="remote-video-wrapper">
+        <video id="remoteVideo" autoplay playsinline></video>
+        <div id="remoteUserName" class="video-label">Friend</div>
+      </div>
+
+      <!-- Audio controls for local user -->
+      <div class="call-controls glass p-2 flex gap-2">
+        <button id="toggleMicBtn" class="btn btn-icon" title="Mute/Unmute Mic">
+          <span class="icon">🎙️</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Admin Approval Dialogs -->
+    <!-- Host: Someone wants to join -->
+    <div id="joinRequestOverlay" class="approval-overlay hidden">
+      <div class="approval-card glass p-4">
+        <h3 class="text-xl font-bold mb-2">Incoming Request</h3>
+        <p class="mb-4"><strong id="requestName" class="text-holi-pink">Someone</strong> wants to join your Holi Party!
+        </p>
+        <div class="flex gap-4 justify-center">
+          <button id="denyRequestBtn" class="btn btn-secondary">Deny</button>
+          <button id="acceptRequestBtn" class="btn btn-primary">Admit</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Guest: Waiting for Host -->
+    <div id="waitingApprovalOverlay" class="approval-overlay hidden">
+      <div class="approval-card glass p-4">
+        <div class="loader-ring text-holi-gold text-4xl mb-3">⏳</div>
+        <h3 class="text-xl font-bold mb-2">Waiting for Host...</h3>
+        <p class="text-sm text-dim">Please wait while the host admits you to the party.</p>
+      </div>
+    </div>
+
     <!-- Bottom Gesture Guide Overlay -->
     <div class="gesture-overlay">
       <div class="gesture-tip">✌️ Peace = Switch Mode</div>

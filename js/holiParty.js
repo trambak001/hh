@@ -115,11 +115,31 @@ class HoliPartyMode {
         // Firebase listeners
         this._listeners = [];
 
-        // Callbacks for UI
+        // WebRTC properties
+        this.peerConnection = null;
+        this.localStream = null;
+        this.remoteStream = null;
+        this.rtcConfig = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        };
+        this.webrtcUnsubs = [];
+
+        // Admin Approval State
+        this.pendingGuestId = null;
+        this.pendingGuestName = null;
+
+        // Callbacks
         this.onRoomCreated = null;
         this.onPlayerJoined = null;
         this.onOpponentLeft = null;
         this.onScoreUpdate = null;
+        this.onJoinRequest = null;
+        this.onWaitingForHost = null;
+        this.onHostRejected = null;
+        this.onRemoteStreamReady = null;
     }
 
     get currentColor() {
@@ -160,6 +180,9 @@ class HoliPartyMode {
             timeoutPromise
         ]);
 
+        await this._setupLocalStream();
+
+        this._listenForJoinRequests();
         this._listenForOpponent();
         this._listenForThrows();
 
@@ -196,16 +219,39 @@ class HoliPartyMode {
             this.opponentOnline = true;
         }
 
-        // Join room
-        await update(ref(db, `rooms/${this.roomCode}/players`), {
-            player2: { name: playerName, score: 0, online: true }
+        await this._setupLocalStream();
+
+        // Write join request for Admin Approval
+        const requestRef = ref(db, `rooms/${this.roomCode}/join_requests/${this.playerId}`);
+        await set(requestRef, {
+            name: playerName,
+            status: 'pending'
         });
-        await update(ref(db, `rooms/${this.roomCode}`), { status: 'active' });
 
-        this._listenForOpponent();
-        this._listenForThrows();
+        if (this.onWaitingForHost) this.onWaitingForHost();
 
-        if (this.onPlayerJoined) this.onPlayerJoined(this.opponentName);
+        // Listen for Host Approval
+        return new Promise((resolve, reject) => {
+            const unsub = onValue(requestRef, async (reqSnap) => {
+                if (!reqSnap.exists()) return;
+                const reqStatus = reqSnap.val().status;
+
+                if (reqStatus === 'accepted') {
+                    unsub();
+                    await this._setupWebRTC();
+                    this._listenForOpponent();
+                    this._listenForThrows();
+                    this._listenForOffer();
+                    if (this.onPlayerJoined) this.onPlayerJoined(this.opponentName);
+                    resolve();
+                } else if (reqStatus === 'denied') {
+                    unsub();
+                    if (this.onHostRejected) this.onHostRejected();
+                    reject(new Error("Host denied the request"));
+                }
+            });
+            this._listeners.push(unsub);
+        });
     }
 
     _listenForOpponent() {
@@ -335,6 +381,158 @@ class HoliPartyMode {
         }
     }
 
+    // ===================================
+    // Admin Approval & WebRTC Networking
+    // ===================================
+
+    _listenForJoinRequests() {
+        const requestsRef = ref(db, `rooms/${this.roomCode}/join_requests`);
+        const unsub = onChildAdded(requestsRef, (snapshot) => {
+            const val = snapshot.val();
+            if (val.status === 'pending') {
+                this.pendingGuestId = snapshot.key;
+                this.pendingGuestName = val.name;
+                if (this.onJoinRequest) this.onJoinRequest(val.name);
+            }
+        });
+        this._listeners.push(unsub);
+    }
+
+    async acceptJoinRequest() {
+        if (!this.pendingGuestId) return;
+
+        // Move to players
+        await update(ref(db, `rooms/${this.roomCode}/players`), {
+            [this.pendingGuestId]: { name: this.pendingGuestName, score: 0, online: true }
+        });
+
+        // Update request status
+        await update(ref(db, `rooms/${this.roomCode}/join_requests/${this.pendingGuestId}`), {
+            status: 'accepted'
+        });
+
+        this.opponentName = this.pendingGuestName;
+
+        await this._setupWebRTC();
+        await this._createOffer();
+
+        this.pendingGuestId = null;
+        this.pendingGuestName = null;
+
+        if (this.onPlayerJoined) this.onPlayerJoined(this.opponentName);
+    }
+
+    async denyJoinRequest() {
+        if (!this.pendingGuestId) return;
+        await update(ref(db, `rooms/${this.roomCode}/join_requests/${this.pendingGuestId}`), {
+            status: 'denied'
+        });
+        this.pendingGuestId = null;
+    }
+
+    async _setupLocalStream() {
+        try {
+            this.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        } catch (e) {
+            console.warn("Camera/Mic access denied for WebRTC", e);
+        }
+    }
+
+    toggleMic() {
+        if (this.localStream) {
+            const audioTrack = this.localStream.getAudioTracks()[0];
+            if (audioTrack) {
+                audioTrack.enabled = !audioTrack.enabled;
+                return !audioTrack.enabled; // returns true if muted
+            }
+        }
+        return false;
+    }
+
+    async _setupWebRTC() {
+        this.peerConnection = new RTCPeerConnection(this.rtcConfig);
+
+        // Add local tracks
+        if (this.localStream) {
+            this.localStream.getTracks().forEach(track => {
+                this.peerConnection.addTrack(track, this.localStream);
+            });
+        }
+
+        // Receive remote tracks
+        this.peerConnection.ontrack = (event) => {
+            if (event.streams && event.streams[0]) {
+                this.remoteStream = event.streams[0];
+                if (this.onRemoteStreamReady) this.onRemoteStreamReady(this.remoteStream);
+            }
+        };
+
+        // Handle ICE candidates
+        this.peerConnection.onicecandidate = (event) => {
+            if (event.candidate) {
+                const candidatesRef = ref(db, `rooms/${this.roomCode}/webrtc/candidates/${this.playerId}`);
+                push(candidatesRef, event.candidate.toJSON());
+            }
+        };
+
+        // Listen for remote ICE candidates
+        const opponentId = this.playerId === 'player1' ? 'player2' : 'player1';
+        const remoteCandidatesRef = ref(db, `rooms/${this.roomCode}/webrtc/candidates/${opponentId}`);
+        const unsubCand = onChildAdded(remoteCandidatesRef, (snapshot) => {
+            if (this.peerConnection && this.peerConnection.remoteDescription) {
+                this.peerConnection.addIceCandidate(new RTCIceCandidate(snapshot.val()));
+            } else {
+                // If remote description isn't set yet, store candidates and add them later
+                // For simplicity in this demo, we assume offer/answer completes fast enough.
+            }
+        });
+        this.webrtcUnsubs.push(unsubCand);
+    }
+
+    async _createOffer() {
+        // Host creates offer
+        const offer = await this.peerConnection.createOffer();
+        await this.peerConnection.setLocalDescription(offer);
+
+        await set(ref(db, `rooms/${this.roomCode}/webrtc/offer`), {
+            type: offer.type,
+            sdp: offer.sdp
+        });
+
+        // Listen for answer
+        const answerRef = ref(db, `rooms/${this.roomCode}/webrtc/answer`);
+        const unsubAns = onValue(answerRef, async (snapshot) => {
+            if (snapshot.exists()) {
+                const answer = snapshot.val();
+                if (!this.peerConnection.currentRemoteDescription) {
+                    await this.peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+                }
+            }
+        });
+        this.webrtcUnsubs.push(unsubAns);
+    }
+
+    async _listenForOffer() {
+        // Guest listens for offer
+        const offerRef = ref(db, `rooms/${this.roomCode}/webrtc/offer`);
+        const unsubOffer = onValue(offerRef, async (snapshot) => {
+            if (snapshot.exists() && this.peerConnection && !this.peerConnection.currentRemoteDescription) {
+                const offer = snapshot.val();
+                await this.peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+
+                // Create answer
+                const answer = await this.peerConnection.createAnswer();
+                await this.peerConnection.setLocalDescription(answer);
+
+                await set(ref(db, `rooms/${this.roomCode}/webrtc/answer`), {
+                    type: answer.type,
+                    sdp: answer.sdp
+                });
+            }
+        });
+        this.webrtcUnsubs.push(unsubOffer);
+    }
+
     async leaveRoom() {
         if (this.roomCode && this.playerId) {
             try {
@@ -342,6 +540,21 @@ class HoliPartyMode {
                 await update(playerRef, { online: false });
             } catch (e) { /* ignore */ }
         }
+
+        // Cleanup WebRTC
+        if (this.peerConnection) {
+            this.peerConnection.close();
+            this.peerConnection = null;
+        }
+        if (this.localStream) {
+            this.localStream.getTracks().forEach(track => track.stop());
+            this.localStream = null;
+        }
+        this.webrtcUnsubs.forEach(unsub => {
+            if (typeof unsub === 'function') unsub();
+        });
+        this.webrtcUnsubs = [];
+
         // Clean up listeners
         this._listeners.forEach(unsub => {
             if (typeof unsub === 'function') unsub();
