@@ -126,13 +126,17 @@ class App {
         const w = container.clientWidth;
         const h = container.clientHeight;
 
-        this.canvas.width = w;
-        this.canvas.height = h;
-        this.videoCanvas.width = w;
-        this.videoCanvas.height = h;
+        // Cap resolution to avoid extreme lag on mobile and high-DPI displays
+        const maxResolution = 800;
+        const scale = (w > 0 && h > 0) ? Math.min(1, maxResolution / Math.max(w, h)) : 1;
 
-        if (this.balloonMode) this.balloonMode.resize(w, h);
-        if (this.partyMode) this.partyMode.resize(w, h);
+        this.canvas.width = Math.floor(w * scale);
+        this.canvas.height = Math.floor(h * scale);
+        this.videoCanvas.width = Math.floor(w * scale);
+        this.videoCanvas.height = Math.floor(h * scale);
+
+        if (this.balloonMode) this.balloonMode.resize(this.canvas.width, this.canvas.height);
+        if (this.partyMode) this.partyMode.resize(this.canvas.width, this.canvas.height);
     }
 
     async start() {

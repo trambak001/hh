@@ -805,6 +805,23 @@ body {
     .splash-hint {
         font-size: 0.65rem;
     }
+
+    .color-swatch {
+        width: 22px;
+        height: 22px;
+    }
+
+    .bottom-controls {
+        bottom: 15px;
+        padding: 8px 16px;
+        gap: 8px;
+    }
+
+    .tutorial-card {
+        padding: 24px 20px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
 }
 
 @media (max-width: 480px) {
@@ -822,6 +839,32 @@ body {
 
     .room-code {
         font-size: 1.5rem;
+    }
+
+    .color-swatch {
+        width: 18px;
+        height: 18px;
+    }
+
+    .slide-emoji {
+        font-size: 3rem;
+    }
+
+    .slide-title {
+        font-size: 1.2rem;
+    }
+
+    .gesture-demo-hand {
+        font-size: 2.5rem;
+    }
+
+    .gesture-demo-hand.big {
+        font-size: 3.5rem;
+    }
+
+    .btn-tutorial-start {
+        padding: 12px 24px;
+        font-size: 1rem;
     }
 }
 

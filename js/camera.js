@@ -23,8 +23,8 @@ class CameraManager {
 
         this.hands.setOptions({
             maxNumHands: 2,
-            modelComplexity: 1,
-            minDetectionConfidence: 0.7,
+            modelComplexity: 0, // 0 is much faster for mobile devices, avoids lag
+            minDetectionConfidence: 0.6,
             minTrackingConfidence: 0.5,
         });
 
@@ -39,8 +39,8 @@ class CameraManager {
                     await this.hands.send({ image: this.video });
                 }
             },
-            width: 1280,
-            height: 720,
+            width: 640,  // Lower resolution for better frame rate
+            height: 480,
         });
 
         this.isRunning = true;
