@@ -1,0 +1,1190 @@
+/* ============================================
+   Virtual Holi — CSS Theme
+   ============================================ */
+
+/* ---- CSS Variables ---- */
+:root {
+    --bg-dark: #0a0a1a;
+    --bg-surface: rgba(255, 255, 255, 0.04);
+    --glass: rgba(255, 255, 255, 0.08);
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --text: #f0f0f0;
+    --text-dim: rgba(255, 255, 255, 0.5);
+    --holi-pink: #FF1493;
+    --holi-orange: #FF6B35;
+    --holi-gold: #FFD700;
+    --holi-green: #00E676;
+    --holi-cyan: #00BCD4;
+    --holi-purple: #7C4DFF;
+    --holi-blue: #2196F3;
+    --font: 'Outfit', sans-serif;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow-glow: 0 0 30px rgba(124, 77, 255, 0.15);
+}
+
+/* ---- Reset ---- */
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: var(--font);
+    background: var(--bg-dark);
+    color: var(--text);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ============================================
+   Loading Screen
+   ============================================ */
+.loading-screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 40%, #0a1a2e 100%);
+    z-index: 100;
+}
+
+.loading-content {
+    text-align: center;
+    z-index: 2;
+}
+
+.holi-loader {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 30px;
+}
+
+.loader-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    animation: spin 2s linear infinite;
+}
+
+.ring1 {
+    inset: 0;
+    border-top-color: var(--holi-pink);
+    border-right-color: var(--holi-pink);
+    animation-duration: 1.5s;
+}
+
+.ring2 {
+    inset: 8px;
+    border-top-color: var(--holi-gold);
+    border-left-color: var(--holi-gold);
+    animation-duration: 2s;
+    animation-direction: reverse;
+}
+
+.ring3 {
+    inset: 16px;
+    border-bottom-color: var(--holi-green);
+    border-right-color: var(--holi-green);
+    animation-duration: 1.8s;
+}
+
+.ring4 {
+    inset: 24px;
+    border-top-color: var(--holi-purple);
+    border-left-color: var(--holi-purple);
+    animation-duration: 2.2s;
+    animation-direction: reverse;
+}
+
+.loader-emoji {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 28px;
+    animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+    50% {
+        transform: translate(-50%, -50%) scale(1.2);
+    }
+}
+
+.loading-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, var(--holi-pink), var(--holi-gold), var(--holi-green), var(--holi-cyan), var(--holi-purple));
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 3s linear infinite;
+}
+
+@keyframes shimmer {
+    to {
+        background-position: 200% center;
+    }
+}
+
+.loading-msg {
+    margin-top: 12px;
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    font-weight: 300;
+}
+
+/* Floating background dots */
+.floating-colors {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.float-dot {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.3;
+    filter: blur(30px);
+    animation: floatDot 8s ease-in-out infinite;
+}
+
+.dot1 {
+    width: 120px;
+    height: 120px;
+    background: var(--holi-pink);
+    top: 10%;
+    left: 10%;
+    animation-delay: 0s;
+}
+
+.dot2 {
+    width: 80px;
+    height: 80px;
+    background: var(--holi-gold);
+    top: 20%;
+    right: 15%;
+    animation-delay: 1s;
+}
+
+.dot3 {
+    width: 100px;
+    height: 100px;
+    background: var(--holi-green);
+    bottom: 20%;
+    left: 20%;
+    animation-delay: 2s;
+}
+
+.dot4 {
+    width: 60px;
+    height: 60px;
+    background: var(--holi-purple);
+    bottom: 30%;
+    right: 10%;
+    animation-delay: 3s;
+}
+
+.dot5 {
+    width: 90px;
+    height: 90px;
+    background: var(--holi-cyan);
+    top: 50%;
+    left: 40%;
+    animation-delay: 1.5s;
+}
+
+.dot6 {
+    width: 70px;
+    height: 70px;
+    background: var(--holi-orange);
+    top: 60%;
+    right: 30%;
+    animation-delay: 2.5s;
+}
+
+.dot7 {
+    width: 110px;
+    height: 110px;
+    background: var(--holi-blue);
+    bottom: 10%;
+    left: 50%;
+    animation-delay: 0.5s;
+}
+
+.dot8 {
+    width: 50px;
+    height: 50px;
+    background: var(--holi-pink);
+    top: 5%;
+    left: 60%;
+    animation-delay: 3.5s;
+}
+
+@keyframes floatDot {
+
+    0%,
+    100% {
+        transform: translate(0, 0);
+    }
+
+    25% {
+        transform: translate(30px, -20px);
+    }
+
+    50% {
+        transform: translate(-20px, 30px);
+    }
+
+    75% {
+        transform: translate(15px, 15px);
+    }
+}
+
+/* ============================================
+   Main App Layout
+   ============================================ */
+.app {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-dark);
+}
+
+/* ---- Top Bar ---- */
+.top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background: var(--glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--glass-border);
+    z-index: 10;
+    flex-shrink: 0;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.logo-icon {
+    font-size: 1.6rem;
+}
+
+.logo-text {
+    font-size: 1.3rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, var(--holi-pink), var(--holi-gold), var(--holi-green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* ---- Mode Switcher ---- */
+.mode-switcher {
+    display: flex;
+    gap: 4px;
+    padding: 3px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 14px;
+    border: 1px solid var(--glass-border);
+}
+
+.mode-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-family: var(--font);
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: 11px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.mode-btn:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.mode-btn.active {
+    color: white;
+    background: linear-gradient(135deg, rgba(124, 77, 255, 0.3), rgba(255, 20, 147, 0.3));
+    box-shadow: 0 0 20px rgba(124, 77, 255, 0.15);
+}
+
+.mode-icon {
+    font-size: 1.1rem;
+}
+
+.mode-label {
+    font-weight: 600;
+}
+
+/* ---- Gesture Guide (top-right) ---- */
+.gesture-guide {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+}
+
+.gesture-icon {
+    font-size: 1.3rem;
+}
+
+.gesture-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--holi-gold);
+    text-transform: uppercase;
+}
+
+/* ============================================
+   Camera Container
+   ============================================ */
+.camera-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: #000;
+}
+
+.video-canvas,
+.effect-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.video-canvas {
+    z-index: 1;
+}
+
+.effect-canvas {
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* ============================================
+   Score Panel (Balloon Mode)
+   ============================================ */
+.score-panel {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 14px 20px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+}
+
+.score-item {
+    text-align: center;
+}
+
+.score-label {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 500;
+}
+
+.score-value {
+    font-size: 2.2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--holi-gold), var(--holi-orange));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.combo-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--holi-green);
+    animation: comboGlow 0.5s ease-in-out;
+}
+
+@keyframes comboGlow {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.4);
+        text-shadow: 0 0 20px var(--holi-green);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* ============================================
+   Splash UI (Color Palette)
+   ============================================ */
+.splash-ui {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.color-palette {
+    display: flex;
+    gap: 6px;
+    padding: 8px 14px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    border-radius: 50px;
+}
+
+.color-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.color-swatch:hover {
+    transform: scale(1.2);
+}
+
+.color-swatch.active {
+    border-color: white;
+    box-shadow: 0 0 12px currentColor;
+    transform: scale(1.25);
+}
+
+.splash-hint {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    padding: 4px 12px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+}
+
+/* ============================================
+   Party UI
+   ============================================ */
+.party-ui {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    z-index: 5;
+    max-width: 320px;
+}
+
+.glass {
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+}
+
+.party-panel {
+    padding: 18px;
+}
+
+.party-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    background: linear-gradient(90deg, var(--holi-pink), var(--holi-gold), var(--holi-green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.party-status {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+}
+
+.party-status.waiting {
+    color: var(--holi-gold);
+}
+
+.party-status.connected {
+    color: var(--holi-green);
+}
+
+.party-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.join-group {
+    display: flex;
+    gap: 6px;
+}
+
+.btn {
+    padding: 10px 16px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: var(--font);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-create {
+    background: linear-gradient(135deg, var(--holi-purple), var(--holi-pink));
+    color: white;
+}
+
+.btn-create:hover {
+    box-shadow: 0 0 20px rgba(124, 77, 255, 0.4);
+    transform: translateY(-1px);
+}
+
+.btn-join {
+    background: linear-gradient(135deg, var(--holi-cyan), var(--holi-green));
+    color: white;
+    flex-shrink: 0;
+}
+
+.btn-join:hover {
+    box-shadow: 0 0 20px rgba(0, 230, 118, 0.4);
+    transform: translateY(-1px);
+}
+
+.btn-leave {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-dim);
+    border: 1px solid var(--glass-border);
+}
+
+.btn-leave:hover {
+    background: rgba(255, 50, 50, 0.2);
+    color: #ff6b6b;
+}
+
+.input-code {
+    flex: 1;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.input-code:focus {
+    border-color: var(--holi-cyan);
+}
+
+.input-code::placeholder {
+    letter-spacing: 0;
+    text-transform: none;
+    color: rgba(255, 255, 255, 0.2);
+    font-weight: 400;
+}
+
+/* Room Code Display */
+.room-code-display {
+    text-align: center;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: var(--radius-sm);
+    margin-bottom: 12px;
+}
+
+.room-code-label {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 4px;
+}
+
+.room-code {
+    display: block;
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: 6px;
+    background: linear-gradient(90deg, var(--holi-gold), var(--holi-orange));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.room-code-hint {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--holi-green);
+    margin-top: 4px;
+}
+
+/* Party Scoreboard */
+.party-scoreboard {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: var(--radius-sm);
+    margin-bottom: 12px;
+}
+
+.score-col {
+    text-align: center;
+}
+
+.score-player {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.score-num {
+    font-size: 1.8rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--holi-gold), var(--holi-pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.score-vs {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-dim);
+}
+
+/* Party Hints */
+.party-hints {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.hint-item {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+}
+
+/* ============================================
+   Bottom Gesture Overlay
+   ============================================ */
+.gesture-overlay {
+    position: fixed;
+    bottom: 8px;
+    right: 16px;
+    z-index: 10;
+}
+
+.gesture-tip {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    padding: 4px 10px;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    border: 1px solid var(--glass-border);
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+@media (max-width: 768px) {
+    .top-bar {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 8px 12px;
+    }
+
+    .mode-switcher {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .mode-btn {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+    }
+
+    .mode-label {
+        display: none;
+    }
+
+    .mode-icon {
+        font-size: 1.3rem;
+    }
+
+    .logo-text {
+        font-size: 1.1rem;
+    }
+
+    .party-ui {
+        max-width: 280px;
+    }
+
+    .splash-hint {
+        font-size: 0.65rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .gesture-guide {
+        padding: 4px 10px;
+    }
+
+    .gesture-label {
+        display: none;
+    }
+
+    .party-panel {
+        padding: 12px;
+    }
+
+    .room-code {
+        font-size: 1.5rem;
+    }
+}
+
+/* ============================================
+   Tutorial / Onboarding Overlay
+   ============================================ */
+.tutorial-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(5, 5, 20, 0.92);
+    backdrop-filter: blur(12px);
+    z-index: 200;
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.tutorial-card {
+    width: 90%;
+    max-width: 520px;
+    padding: 32px 28px;
+    text-align: center;
+    animation: slideUp 0.5s ease;
+    background: rgba(20, 15, 40, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 24px;
+    box-shadow: 0 0 80px rgba(124, 77, 255, 0.15), 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.tutorial-header {
+    margin-bottom: 20px;
+}
+
+.tutorial-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, var(--holi-pink), var(--holi-gold), var(--holi-green), var(--holi-cyan), var(--holi-purple));
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 3s linear infinite;
+}
+
+.tutorial-subtitle {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    margin-top: 6px;
+}
+
+/* Step Dots */
+.tutorial-steps-indicator {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 24px;
+}
+
+.step-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.step-dot.active {
+    background: var(--holi-gold);
+    box-shadow: 0 0 12px var(--holi-gold);
+    transform: scale(1.3);
+}
+
+.step-dot.done {
+    background: var(--holi-green);
+}
+
+/* Tutorial Slides */
+.tutorial-slides {
+    min-height: 260px;
+    position: relative;
+}
+
+.tutorial-slide {
+    display: none;
+    animation: fadeSlideIn 0.4s ease;
+}
+
+.tutorial-slide.active {
+    display: block;
+}
+
+@keyframes fadeSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.slide-emoji {
+    font-size: 4rem;
+    margin-bottom: 12px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.slide-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: white;
+}
+
+.slide-desc {
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.6;
+    margin-bottom: 16px;
+}
+
+.slide-tip {
+    font-size: 0.8rem;
+    color: var(--holi-gold);
+    padding: 8px 16px;
+    background: rgba(255, 215, 0, 0.08);
+    border: 1px solid rgba(255, 215, 0, 0.15);
+    border-radius: 10px;
+    display: inline-block;
+}
+
+/* Gesture Demo Animation */
+.gesture-demo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.gesture-demo-hand {
+    font-size: 3.5rem;
+    animation: handPulse 1.5s ease-in-out infinite;
+}
+
+.gesture-demo-hand.big {
+    font-size: 5rem;
+}
+
+.gesture-demo-hand.bounce {
+    animation: balloonBounce 2s ease-in-out infinite;
+}
+
+@keyframes handPulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.15);
+    }
+}
+
+@keyframes balloonBounce {
+
+    0%,
+    100% {
+        transform: translateY(0) scale(1);
+    }
+
+    50% {
+        transform: translateY(-15px) scale(1.1);
+    }
+}
+
+.gesture-demo-arrow {
+    font-size: 2rem;
+    animation: arrowPulse 1s ease-in-out infinite;
+}
+
+@keyframes arrowPulse {
+
+    0%,
+    100% {
+        opacity: 0.5;
+        transform: translateX(0);
+    }
+
+    50% {
+        opacity: 1;
+        transform: translateX(5px);
+    }
+}
+
+/* Mode Preview Cards */
+.slide-modes {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.mode-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 18px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.mode-preview:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-3px);
+}
+
+.mode-preview-icon {
+    font-size: 2rem;
+}
+
+/* Action Previews (Multiplayer slide) */
+.slide-actions-preview {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-top: 16px;
+}
+
+.action-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+}
+
+.action-preview span:first-child {
+    font-size: 1.6rem;
+}
+
+/* Tutorial Navigation */
+.tutorial-nav {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.btn-tutorial-nav {
+    padding: 10px 24px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-dim);
+    border: 1px solid var(--glass-border);
+}
+
+.btn-tutorial-nav:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.12);
+    color: white;
+}
+
+.btn-tutorial-nav:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.btn-tutorial-nav.btn-primary {
+    background: linear-gradient(135deg, var(--holi-purple), var(--holi-pink));
+    color: white;
+    border: none;
+}
+
+.btn-tutorial-nav.btn-primary:hover {
+    box-shadow: 0 0 25px rgba(124, 77, 255, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-tutorial-start {
+    padding: 14px 36px;
+    font-size: 1.1rem;
+    background: linear-gradient(135deg, var(--holi-pink), var(--holi-gold), var(--holi-green));
+    background-size: 200% auto;
+    color: white;
+    border: none;
+    border-radius: 16px;
+    animation: shimmer 3s linear infinite;
+    font-weight: 700;
+}
+
+.btn-tutorial-start:hover {
+    box-shadow: 0 0 40px rgba(255, 20, 147, 0.4);
+    transform: translateY(-3px) scale(1.03);
+}
+
+.tutorial-skip {
+    display: block;
+    margin: 16px auto 0;
+    padding: 6px 18px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.3);
+    font-family: var(--font);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.tutorial-skip:hover {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Help Button */
+.help-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-left: 6px;
+}
+
+.help-btn:hover {
+    background: rgba(124, 77, 255, 0.3);
+    transform: scale(1.1);
+}

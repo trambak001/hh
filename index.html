@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Virtual Holi 🎨 — Color Splash, Balloon Burst & Party</title>
+  <meta name="description"
+    content="Play Holi virtually! Throw colors and water balloons at friends using hand gestures through your webcam.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- MediaPipe -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+
+  <!-- ===== Loading Screen ===== -->
+  <div id="loadingScreen" class="loading-screen">
+    <div class="loading-content">
+      <div class="holi-loader">
+        <div class="loader-ring ring1"></div>
+        <div class="loader-ring ring2"></div>
+        <div class="loader-ring ring3"></div>
+        <div class="loader-ring ring4"></div>
+        <span class="loader-emoji">🎨</span>
+      </div>
+      <h1 class="loading-title">Virtual Holi</h1>
+      <p id="loadingMessage" class="loading-msg">Setting up camera & hand tracking...</p>
+    </div>
+    <div class="floating-colors">
+      <div class="float-dot dot1"></div>
+      <div class="float-dot dot2"></div>
+      <div class="float-dot dot3"></div>
+      <div class="float-dot dot4"></div>
+      <div class="float-dot dot5"></div>
+      <div class="float-dot dot6"></div>
+      <div class="float-dot dot7"></div>
+      <div class="float-dot dot8"></div>
+    </div>
+  </div>
+
+  <!-- ===== First-Time Player Guide / Tutorial ===== -->
+  <div id="tutorialOverlay" class="tutorial-overlay hidden">
+    <div class="tutorial-card glass">
+      <div class="tutorial-header">
+        <h2 class="tutorial-title">🎨 Welcome to Virtual Holi!</h2>
+        <p class="tutorial-subtitle">Learn the gestures to play with colors & balloons</p>
+      </div>
+
+      <!-- Step indicators -->
+      <div class="tutorial-steps-indicator">
+        <span class="step-dot active" data-step="0"></span>
+        <span class="step-dot" data-step="1"></span>
+        <span class="step-dot" data-step="2"></span>
+        <span class="step-dot" data-step="3"></span>
+        <span class="step-dot" data-step="4"></span>
+      </div>
+
+      <!-- Tutorial slides -->
+      <div class="tutorial-slides">
+        <!-- Slide 0: Welcome -->
+        <div class="tutorial-slide active" data-slide="0">
+          <div class="slide-emoji">🎉</div>
+          <h3 class="slide-title">Happy Holi!</h3>
+          <p class="slide-desc">Use your <strong>webcam</strong> and <strong>hand gestures</strong> to throw colorful
+            powder, burst balloons, and play with friends!</p>
+          <div class="slide-modes">
+            <div class="mode-preview">
+              <span class="mode-preview-icon">🎨</span>
+              <span>Color Splash</span>
+            </div>
+            <div class="mode-preview">
+              <span class="mode-preview-icon">🎈</span>
+              <span>Balloon Burst</span>
+            </div>
+            <div class="mode-preview">
+              <span class="mode-preview-icon">🎉</span>
+              <span>Holi Party</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 1: Color Splash gesture -->
+        <div class="tutorial-slide" data-slide="1">
+          <div class="gesture-demo">
+            <div class="gesture-demo-hand">✋</div>
+            <div class="gesture-demo-arrow">➡️</div>
+            <div class="gesture-demo-hand">✊</div>
+          </div>
+          <h3 class="slide-title">🎨 Throw Color Powder</h3>
+          <p class="slide-desc">Open your <strong>palm ✋</strong> to charge up color, then close into a <strong>fist
+              ✊</strong> to throw it!</p>
+          <div class="slide-tip">💡 The faster you move, the bigger the splash!</div>
+        </div>
+
+        <!-- Slide 2: Balloon Burst gesture -->
+        <div class="tutorial-slide" data-slide="2">
+          <div class="gesture-demo">
+            <div class="gesture-demo-hand">🤏</div>
+            <div class="gesture-demo-arrow">💥</div>
+            <div class="gesture-demo-hand bounce">🎈</div>
+          </div>
+          <h3 class="slide-title">🎈 Pop Balloons</h3>
+          <p class="slide-desc"><strong>Pinch 🤏</strong> or make a <strong>fist ✊</strong> near a floating balloon to
+            pop it with a colorful explosion!</p>
+          <div class="slide-tip">💡 Build combos by popping balloons quickly!</div>
+        </div>
+
+        <!-- Slide 3: Mode Switching -->
+        <div class="tutorial-slide" data-slide="3">
+          <div class="gesture-demo">
+            <div class="gesture-demo-hand big">✌️</div>
+          </div>
+          <h3 class="slide-title">✌️ Switch Modes</h3>
+          <p class="slide-desc">Show the <strong>peace sign ✌️</strong> to cycle between Color Splash, Balloon Burst,
+            and Holi Party modes!</p>
+          <div class="slide-tip">💡 Or just click the mode buttons at the top!</div>
+        </div>
+
+        <!-- Slide 4: Multiplayer -->
+        <div class="tutorial-slide" data-slide="4">
+          <div class="gesture-demo">
+            <div class="gesture-demo-hand big">🎉</div>
+          </div>
+          <h3 class="slide-title">🎉 Play with Friends!</h3>
+          <p class="slide-desc">In <strong>Holi Party</strong> mode, create a room and share the code with your friend.
+            Throw color powder and water balloons at each other!</p>
+          <div class="slide-actions-preview">
+            <div class="action-preview">
+              <span>✋→✊</span>
+              <span>Throw Color</span>
+            </div>
+            <div class="action-preview">
+              <span>🤏→🖐️</span>
+              <span>Throw Balloon 💦</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation buttons -->
+      <div class="tutorial-nav">
+        <button id="tutorialPrev" class="btn btn-tutorial-nav" disabled>← Back</button>
+        <button id="tutorialNext" class="btn btn-tutorial-nav btn-primary">Next →</button>
+        <button id="tutorialStart" class="btn btn-tutorial-start hidden">🎨 Let's Play Holi! 🎉</button>
+      </div>
+
+      <button id="tutorialSkip" class="tutorial-skip">Skip Tutorial</button>
+    </div>
+  </div>
+
+  <!-- ===== Main App ===== -->
+  <div id="app" class="app hidden">
+
+    <!-- Top Bar -->
+    <header class="top-bar">
+      <div class="logo">
+        <span class="logo-icon">🎨</span>
+        <span class="logo-text">Virtual Holi</span>
+      </div>
+
+      <!-- Mode Switcher -->
+      <nav class="mode-switcher">
+        <button class="mode-btn active" data-mode="splash" id="modeSplash">
+          <span class="mode-icon">🎨</span>
+          <span class="mode-label">Color Splash</span>
+        </button>
+        <button class="mode-btn" data-mode="balloon" id="modeBalloon">
+          <span class="mode-icon">🎈</span>
+          <span class="mode-label">Balloon Burst</span>
+        </button>
+        <button class="mode-btn" data-mode="party" id="modeParty">
+          <span class="mode-icon">🎉</span>
+          <span class="mode-label">Holi Party</span>
+        </button>
+      </nav>
+
+      <!-- Gesture Guide + Help button -->
+      <div class="gesture-guide">
+        <span id="gestureIcon" class="gesture-icon">🤚</span>
+        <span id="gestureLabel" class="gesture-label">NO HAND</span>
+        <button id="helpBtn" class="help-btn" title="How to Play">❓</button>
+      </div>
+    </header>
+
+    <!-- Camera + Canvas Container -->
+    <main id="cameraContainer" class="camera-container">
+      <video id="webcam" autoplay playsinline style="display:none;"></video>
+      <canvas id="videoCanvas" class="video-canvas"></canvas>
+      <canvas id="effectCanvas" class="effect-canvas"></canvas>
+
+      <!-- Score Panel (Balloon Mode) -->
+      <div id="balloonUI" class="score-panel hidden">
+        <div class="score-item">
+          <span class="score-label">Score</span>
+          <span id="scoreValue" class="score-value">0</span>
+        </div>
+        <div class="score-item combo">
+          <span id="comboValue" class="combo-value"></span>
+        </div>
+      </div>
+
+      <!-- Color Palette (Splash Mode) -->
+      <div id="splashUI" class="splash-ui">
+        <div id="colorPalette" class="color-palette"></div>
+        <div class="splash-hint">✋ Open Palm → ✊ Fist = Throw Color</div>
+      </div>
+
+      <!-- Party Panel -->
+      <div id="partyUI" class="party-ui hidden">
+        <div id="partyPanel" class="party-panel glass">
+          <h3 class="party-title">🎉 Holi Party</h3>
+          <p id="partyStatus" class="party-status">Create or join a room to play!</p>
+
+          <div class="party-actions">
+            <button id="createRoomBtn" class="btn btn-create">🏠 Create Room</button>
+            <div class="join-group">
+              <input id="roomCodeInput" type="text" placeholder="Enter code" maxlength="6" class="input-code">
+              <button id="joinRoomBtn" class="btn btn-join">🔗 Join</button>
+            </div>
+            <button id="leaveRoomBtn" class="btn btn-leave hidden">🚪 Leave Room</button>
+          </div>
+
+          <div class="room-code-display hidden">
+            <span class="room-code-label">Room Code:</span>
+            <span id="roomCodeDisplay" class="room-code">------</span>
+            <span class="room-code-hint">Share this with your friend!</span>
+          </div>
+
+          <div id="partyScoreboard" class="party-scoreboard hidden">
+            <div class="score-col">
+              <span class="score-player">You</span>
+              <span id="myScore" class="score-num">0</span>
+            </div>
+            <span class="score-vs">VS</span>
+            <div class="score-col">
+              <span class="score-player">Friend</span>
+              <span id="friendScore" class="score-num">0</span>
+            </div>
+          </div>
+
+          <div class="party-hints">
+            <div class="hint-item">✋→✊ Throw Color Powder</div>
+            <div class="hint-item">🤏→🖐️ Throw Water Balloon 💦</div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Bottom Gesture Guide Overlay -->
+    <div class="gesture-overlay">
+      <div class="gesture-tip">✌️ Peace = Switch Mode</div>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+
+</html>
