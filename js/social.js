@@ -93,6 +93,44 @@ class SocialManager {
             email: this.user.email || '',
             lastLogin: Date.now()
         });
+
+        this.logActivity("User Logged In");
+        this._updateLocation(); // Try to fetch location on init
+    }
+
+    _updateLocation() {
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(async (position) => {
+                const { latitude, longitude } = position.coords;
+                // Optional: For extreme privacy, ask user first. But requested "full proof tracking if allowed":
+                try {
+                    // Try to reverse geocode or just store coords
+                    await update(ref(db, `users/${this.uid}`), {
+                        coords: { lat: latitude, lng: longitude },
+                        locationUpdated: Date.now()
+                    });
+                    this.logActivity(`Location Updated: ${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
+                } catch (e) {
+                    console.error("Failed to store location", e);
+                }
+            }, (error) => {
+                console.warn("Geolocation access denied or failed", error.message);
+                this.logActivity("Location Access Denied");
+            });
+        }
+    }
+
+    async logActivity(actionDesc, metadata = {}) {
+        const historyRef = ref(db, `users/${this.uid}/history`);
+        try {
+            await push(historyRef, {
+                action: actionDesc,
+                timestamp: Date.now(),
+                ...metadata
+            });
+        } catch (e) {
+            console.error("Failed writing to history log", e);
+        }
     }
 
     _openProfileModal() {
@@ -133,6 +171,8 @@ class SocialManager {
             });
 
             this.editProfileOverlay.classList.add('hidden');
+            this.logActivity("Profile Updated manually");
+            alert('Profile saved successfully!');
         } catch (error) {
             console.error('Error saving profile:', error);
             alert('Failed to save profile details.');

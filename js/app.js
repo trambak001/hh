@@ -547,6 +547,7 @@ class App {
         try {
             this.createRoomBtn.disabled = true;
             await this.partyMode.createRoom(this.socialManager.uid, this.partyMode.playerName);
+            this.socialManager?.logActivity("Created Room");
         } catch (err) {
             alert('Failed to create room: ' + err.message);
         } finally {
@@ -570,6 +571,7 @@ class App {
             this.partyStatus.textContent = '🎉 Connected! Let\'s play!';
             this.partyStatus.className = 'party-status connected';
             this.partyScoreboard.classList.remove('hidden');
+            this.socialManager?.logActivity(`Joined Room: ${code}`);
         } catch (err) {
             alert(err.message);
         } finally {
@@ -579,6 +581,7 @@ class App {
 
     async _leaveRoom() {
         await this.partyMode.leaveRoom();
+        this.socialManager?.logActivity("Left Room");
         this.roomCodeDisplay.parentElement.classList.add('hidden');
         this.partyScoreboard.classList.add('hidden');
         this.leaveRoomBtn.classList.add('hidden');

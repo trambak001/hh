@@ -132,6 +132,11 @@ class BalloonBurstMode {
                 this.combo++;
                 this.maxCombo = Math.max(this.maxCombo, this.combo);
 
+                // Track impressive combos in history
+                if (window.app && window.app.socialManager && (this.combo === 10 || this.combo === 50 || this.combo === 100)) {
+                    window.app.socialManager.logActivity(`Amazing! Reached a Balloon Combo of ${this.combo} 🎈`);
+                }
+
                 // BIG satisfying pop!
                 this.particles.emitSparkle(b.x, b.y, b.color, 50);
                 this.particles.emitPowderBurst(b.x, b.y, b.color, 30, 0, -1, 0.8);

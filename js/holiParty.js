@@ -351,6 +351,9 @@ class HoliPartyMode {
         await update(ref(db, `rooms/${this.roomCode}/join_requests/${reqId}`), {
             status: 'accepted'
         });
+        if (window.app && window.app.socialManager) {
+            window.app.socialManager.logActivity(`Approved Join Request for ${reqId}`);
+        }
     }
 
     async denyJoinRequest(reqId) {
