@@ -232,6 +232,32 @@
     <main id="cameraContainer" class="camera-container">
       <video id="webcam" autoplay playsinline style="display:none;"></video>
       <canvas id="videoCanvas" class="video-canvas"></canvas>
+
+      <!-- Zoom-like Video Grid for Holi Party Remote Video Streams -->
+      <div id="videoChatContainer" class="video-chat-container hidden">
+        <!-- Grid displaying incoming camera streams -->
+        <div id="videoGrid" class="video-grid"></div>
+
+        <!-- Bottom Control Bar -->
+        <div class="video-controls-bar">
+          <button id="toggleMicBtn" class="btn btn-icon control-btn" title="Toggle Mic">
+            <span class="icon">🎤</span>
+          </button>
+          <button id="toggleParticipantsBtn" class="btn btn-icon control-btn" title="Participants">
+            <span class="icon">👥</span>
+          </button>
+        </div>
+
+        <!-- Participants Sidebar -->
+        <div id="roomParticipantsSidebar" class="participants-sidebar glass hidden">
+          <div class="sidebar-header">
+            <h3>In This Room</h3>
+            <button id="closeParticipantsBtn" class="btn-close">&times;</button>
+          </div>
+          <div id="roomParticipantsList" class="participants-list"></div>
+        </div>
+      </div>
+
       <canvas id="effectCanvas" class="effect-canvas"></canvas>
 
       <!-- Score Panel (Balloon Mode) -->

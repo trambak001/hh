@@ -597,8 +597,134 @@ body {
 }
 
 /* ============================================
-   Party UI
+   Party UI & Video Chat Layout
    ============================================ */
+.video-chat-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    /* Let canvas get clicks by default */
+    z-index: 2;
+    /* Below UI but above canvas */
+    display: flex;
+    flex-direction: column;
+}
+
+.video-grid {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 20px;
+    padding-bottom: 80px;
+    /* Space for controls */
+}
+
+/* Dynamic Grid Classes added by JS */
+.grid-1 .remote-video-wrapper {
+    width: 100%;
+    height: 100%;
+}
+
+.grid-2 .remote-video-wrapper {
+    width: 48%;
+    height: 100%;
+}
+
+.grid-3 .remote-video-wrapper {
+    width: 48%;
+    height: 48%;
+}
+
+.grid-5 .remote-video-wrapper {
+    width: 32%;
+    height: 48%;
+}
+
+.grid-more .remote-video-wrapper {
+    width: 24%;
+    height: 32%;
+}
+
+.remote-video-wrapper {
+    position: relative;
+    background: #000;
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    pointer-events: auto;
+    /* Re-enable pointer events for videos */
+}
+
+.remote-video-wrapper.speaking {
+    border-color: var(--holi-green);
+    box-shadow: 0 0 15px var(--holi-green);
+}
+
+.remote-video-wrapper video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.video-label {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    color: white;
+    backdrop-filter: blur(5px);
+}
+
+.video-controls-bar {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    padding: 10px 20px;
+    border-radius: 30px;
+    display: flex;
+    gap: 15px;
+    pointer-events: auto;
+    z-index: 10;
+}
+
+.participants-sidebar {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 300px;
+    bottom: 100px;
+    background: rgba(10, 10, 10, 0.85);
+    border-radius: var(--radius);
+    padding: 20px;
+    pointer-events: auto;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+}
+
+.participants-list {
+    flex: 1;
+    overflow-y: auto;
+    margin-top: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
 .party-ui {
     position: absolute;
     top: 16px;

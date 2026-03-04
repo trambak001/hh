@@ -251,6 +251,7 @@ class App {
                 this.joinRoomBtn.classList.add('hidden');
                 this.roomCodeInput.classList.add('hidden');
                 this.leaveRoomBtn.classList.remove('hidden');
+                this.videoChatContainer.classList.remove('hidden');
             };
 
             this.partyMode.onPlayerJoined = (uid, name) => {
@@ -365,7 +366,7 @@ class App {
                     if (this.balloonMode) this.balloonMode.update(gesture, position);
                     break;
                 case MODES.PARTY:
-                    if (this.partyMode) this.partyMode.update(gesture, position);
+                    if (this.partyMode) this.partyMode.update(gesture, position, prevPosition);
                     break;
             }
 
@@ -582,6 +583,7 @@ class App {
             this.createRoomBtn.classList.add('hidden');
             this.joinRoomBtn.classList.add('hidden');
             this.leaveRoomBtn.classList.remove('hidden');
+            this.videoChatContainer.classList.remove('hidden');
             this.partyStatus.textContent = '🎉 Connected! Let\'s play!';
             this.partyStatus.className = 'party-status connected';
             this.partyScoreboard.classList.remove('hidden');
@@ -598,6 +600,7 @@ class App {
         this.socialManager?.logActivity("Left Room");
         this.roomCodeDisplay.parentElement.classList.add('hidden');
         this.partyScoreboard.classList.add('hidden');
+        this.videoChatContainer.classList.add('hidden');
         this.leaveRoomBtn.classList.add('hidden');
         this.createRoomBtn.classList.remove('hidden');
         this.joinRoomBtn.classList.remove('hidden');
