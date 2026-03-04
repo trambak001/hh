@@ -67,7 +67,8 @@ class App {
         // Authentication Management
         this.socialManager = null;
         this.authManager = new AuthManager((user) => {
-            this.partyMode.playerName = user.displayName || user.phoneNumber;
+            // Map user credentials to Party Mode
+            this.partyMode.playerName = user.displayName || user.email || 'Google User';
 
             // Initialize social features
             if (!this.socialManager) {
@@ -80,7 +81,10 @@ class App {
                 this._switchMode(MODES.SPLASH);
                 this._buildColorPalette();
                 this._gameLoop();
-                this._listenForInvites(user.phoneNumber.replace('+', ''));
+                // Listen for room invites via DB using UID
+                if (user && user.uid) {
+                    this._listenForInvites(user.uid);
+                }
             }
         });
 

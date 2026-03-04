@@ -5,7 +5,7 @@ import { onDisconnect } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase
 class SocialManager {
     constructor(currentUser) {
         this.user = currentUser;
-        this.uid = this.user.phoneNumber.replace('+', ''); // Use phone number digits as safe ID
+        this.uid = this.user.uid;
         this.friends = {};
 
         // UI Elements
@@ -73,7 +73,7 @@ class SocialManager {
     // ==========================================
     async _initProfile() {
         this.userNameEl.textContent = this.user.displayName || "Player";
-        this.userPhoneEl.textContent = this.user.phoneNumber;
+        this.userPhoneEl.textContent = `ID: ${this.uid}`; // Display UID to make sharing easier
 
         const userRef = ref(db, `users/${this.uid}`);
 
@@ -90,7 +90,7 @@ class SocialManager {
         // Ensure user node exists with defaults
         await update(userRef, {
             displayName: this.user.displayName || "Player",
-            phoneNumber: this.user.phoneNumber,
+            email: this.user.email || '',
             lastLogin: Date.now()
         });
     }
@@ -167,18 +167,13 @@ class SocialManager {
     }
 
     async sendFriendRequest() {
-        // Simple search by formatting the input phone number
-        let targetPhone = this.addFriendInput.value.trim();
-        if (!targetPhone) return;
-        if (!targetPhone.startsWith('+')) targetPhone = '+' + targetPhone;
+        const targetId = this.addFriendInput.value.trim();
+        if (!targetId) return;
 
         this.sendRequestBtn.disabled = true;
         this.sendRequestBtn.textContent = '...';
 
         try {
-            // Because our DB is just keyed by numbers, construct target ID
-            const targetId = targetPhone.replace('+', '');
-
             if (targetId === this.uid) {
                 alert("You cannot add yourself.");
                 return;
