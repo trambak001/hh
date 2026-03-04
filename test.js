@@ -1,7 +1,13 @@
 const { chromium } = require('playwright');
 (async () => {
-    const browser = await chromium.launch();
-    const page = await browser.newPage();
+    const browser = await chromium.launch({
+        args: [
+            '--use-fake-ui-for-media-stream',
+            '--use-fake-device-for-media-stream'
+        ]
+    });
+    const context = await browser.newContext({ permissions: ['camera', 'microphone'] });
+    const page = await context.newPage();
     const errors = [];
     page.on('pageerror', err => errors.push(err.message));
     page.on('console', msg => {
@@ -10,8 +16,21 @@ const { chromium } = require('playwright');
     });
 
     try {
-        await page.goto('http://localhost:8080');
+        await page.goto('https://trambak001.github.io/hh/');
         await page.waitForTimeout(5000);
+
+        // Simulate hand landmarks to force gesture loop execution
+        await page.evaluate(() => {
+            if (window.app) {
+                const fakeLandmarks = Array(21).fill({ x: 0.5, y: 0.5, z: 0 });
+                setInterval(() => {
+                    window.app._onHandResults({
+                        multiHandLandmarks: [fakeLandmarks]
+                    });
+                }, 100);
+            }
+        });
+        await page.waitForTimeout(2000);
 
         console.log('--- TEST RESULTS ---');
         console.log('Page title:', await page.title());

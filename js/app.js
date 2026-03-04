@@ -393,7 +393,7 @@ class App {
                 this._drawHandIndicator(this.ctx, position, gesture);
 
                 // Update Gun Sight
-                if (gesture === 4 && this.currentMode !== 3) { // 4 is POINT, 3 is LOBBY
+                if (gesture === GESTURES.POINT && this.currentMode !== MODES.LOBBY) {
                     this.gunSight?.style.setProperty('left', `${position.x}px`);
                     this.gunSight?.style.setProperty('top', `${position.y}px`);
                     this.gunSight?.classList.remove('hidden');
