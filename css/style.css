@@ -526,6 +526,77 @@ body {
 }
 
 /* ============================================
+   Water Gun Sight UI
+   ============================================ */
+#gunSight {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 60px;
+    height: 60px;
+    pointer-events: none;
+    z-index: 50;
+    transform: translate(-50%, -50%);
+    transition: width 0.1s, height 0.1s, opacity 0.2s;
+}
+
+#gunSight::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: -20%;
+    right: -20%;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.8);
+    transform: translateY(-50%);
+}
+
+#gunSight::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: -20%;
+    bottom: -20%;
+    width: 2px;
+    background: rgba(255, 255, 255, 0.8);
+    transform: translateX(-50%);
+}
+
+.gun-sight-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 8px;
+    height: 8px;
+    background: red;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 10px red;
+}
+
+.gun-sight-ring {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    box-sizing: border-box;
+    animation: rotateSight 4s linear infinite;
+}
+
+@keyframes rotateSight {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================
    Party UI
    ============================================ */
 .party-ui {

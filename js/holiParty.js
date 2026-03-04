@@ -258,6 +258,10 @@ class HoliPartyMode {
                 const x = data.x * this.canvasWidth;
                 const y = data.y * this.canvasHeight;
                 this.particles.emitPowderBurst(x, y, data.color, 40, 0, 0, data.force || 0.8);
+            } else if (data.type === 'water') {
+                const x = data.x * this.canvasWidth;
+                const y = data.y * this.canvasHeight;
+                this.particles.emitWaterStream(x, y, data.color, data.dirX, data.dirY);
             } else if (data.type === 'balloon') {
                 const targetX = data.x * this.canvasWidth;
                 const targetY = data.y * this.canvasHeight;
@@ -272,7 +276,7 @@ class HoliPartyMode {
         this._listeners.push(unsub);
     }
 
-    async _sendThrow(type, position, color, force = 0.5) {
+    async _sendThrow(type, position, color, force = 0.5, dirX = 0, dirY = -1) {
         if (!this.roomCode || !this.playerId) return;
 
         const throwsRef = ref(db, `rooms/${this.roomCode}/throws`);
@@ -283,6 +287,8 @@ class HoliPartyMode {
             y: position.y / this.canvasHeight,
             color: color,
             force: force,
+            dirX: dirX,
+            dirY: dirY,
             timestamp: Date.now()
         });
 
@@ -299,11 +305,16 @@ class HoliPartyMode {
     }
 
     setupGestures(gestureDetector) {
-        gestureDetector.onGestureTransition(GESTURES.OPEN_PALM, GESTURES.FIST, (data) => {
-            if (!this.isActive || !this.roomCode) return;
-            const color = this.currentColor;
-            this.particles.emitPowderBurst(data.position.x, data.position.y, color, 20, 0, 0, 0.5);
-            this._sendThrow('powder', data.position, color, 0.8);
+        gestureDetector.onGestureTransition(GESTURES.NONE, GESTURES.OPEN_PALM, () => {
+            if (!this.isActive) return;
+            this.nextColor();
+        });
+        gestureDetector.onGestureTransition(GESTURES.POINT, GESTURES.OPEN_PALM, () => {
+            if (!this.isActive) return;
+            this.nextColor();
+        });
+        gestureDetector.onGestureTransition(GESTURES.FIST, GESTURES.OPEN_PALM, () => {
+            if (!this.isActive) return;
             this.nextColor();
         });
 
@@ -314,11 +325,34 @@ class HoliPartyMode {
         });
     }
 
-    update(gesture, position) {
+    update(gesture, position, prevPosition) {
         if (!this.isActive) return;
-        if (gesture === GESTURES.OPEN_PALM && position) {
+
+        if (gesture === GESTURES.POINT && position) {
+            let dirX = 0;
+            let dirY = -1;
+
+            if (prevPosition) {
+                const dx = position.x - prevPosition.x;
+                const dy = position.y - prevPosition.y;
+                if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+                    const absM = Math.sqrt(dx * dx + dy * dy);
+                    dirX = dx / absM;
+                    dirY = dy / absM;
+                }
+            }
+
+            this.particles.emitWaterStream(position.x, position.y, this.currentColor, dirX, dirY);
+
+            // Throttle network throws so we don't spam Firebase too hard (e.g. 10fps instead of 60fps)
+            if (!this.lastPointTime || Date.now() - this.lastPointTime > 100) {
+                this.lastPointTime = Date.now();
+                this._sendThrow('water', position, this.currentColor, 1, dirX, dirY);
+            }
+        } else if (gesture === GESTURES.OPEN_PALM && position) {
             this.particles.emitCharge(position.x, position.y, this.currentColor);
         }
+
         this.flyingBalloons = this.flyingBalloons.filter(b => {
             const alive = b.update();
             if (b.burst) {

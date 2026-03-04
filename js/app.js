@@ -106,6 +106,8 @@ class App {
 
         // Tutorial
         this.tutorialOverlay = document.getElementById('tutorialOverlay');
+        this.tutorialStepsContainer = document.getElementById('tutorialSteps');
+        this.gunSight = document.getElementById('gunSight');
         this.tutorialStep = 0;
         this.totalTutorialSteps = 5;
 
@@ -352,11 +354,12 @@ class App {
 
             const gesture = this.gesture.getGesture();
             const position = this.gesture.getHandPosition();
+            const prevPosition = this.gesture.prevHandPosition || position;
 
             // Update active mode
             switch (this.currentMode) {
                 case MODES.SPLASH:
-                    this.splashMode.update(gesture, position);
+                    this.splashMode.update(gesture, position, prevPosition);
                     break;
                 case MODES.BALLOON:
                     if (this.balloonMode) this.balloonMode.update(gesture, position);
@@ -388,6 +391,17 @@ class App {
             // Draw hand indicator
             if (this.handDetected) {
                 this._drawHandIndicator(this.ctx, position, gesture);
+
+                // Update Gun Sight
+                if (gesture === 4 && this.currentMode !== 3) { // 4 is POINT, 3 is LOBBY
+                    this.gunSight?.style.setProperty('left', `${position.x}px`);
+                    this.gunSight?.style.setProperty('top', `${position.y}px`);
+                    this.gunSight?.classList.remove('hidden');
+                } else {
+                    this.gunSight?.classList.add('hidden');
+                }
+            } else {
+                this.gunSight?.classList.add('hidden');
             }
 
             // Update UI

@@ -32,39 +32,52 @@ class ColorSplashMode {
     }
 
     setupGestures(gestureDetector) {
-        // Palm -> Fist = Throw color
-        gestureDetector.onGestureTransition(GESTURES.OPEN_PALM, GESTURES.FIST, (data) => {
+        // Change color when opening hand, but only trigger once per open
+        gestureDetector.onGestureTransition(GESTURES.NONE, GESTURES.OPEN_PALM, () => {
             if (!this.isActive) return;
-            this._throwColor(data.position, data.velocity);
+            this.nextColor();
+            if (window.app && window.app.socialManager) {
+                window.app.socialManager.logActivity(`Switched Splash Color to ${this.currentColor}`);
+            }
+        });
+        gestureDetector.onGestureTransition(GESTURES.POINT, GESTURES.OPEN_PALM, () => {
+            if (!this.isActive) return;
+            this.nextColor();
+        });
+        gestureDetector.onGestureTransition(GESTURES.FIST, GESTURES.OPEN_PALM, () => {
+            if (!this.isActive) return;
+            this.nextColor();
         });
     }
 
-    _throwColor(position, velocity) {
-        const force = Math.min(Math.sqrt(velocity.x ** 2 + velocity.y ** 2) / 15, 1);
-        const actualForce = Math.max(force, 0.3); // Minimum throw force
-        const dirX = velocity.x / (Math.abs(velocity.x) + Math.abs(velocity.y) + 0.01);
-        const dirY = velocity.y / (Math.abs(velocity.x) + Math.abs(velocity.y) + 0.01);
-
-        this.particles.emitPowderBurst(
-            position.x, position.y,
-            this.currentColor,
-            30 + Math.floor(actualForce * 30),
-            dirX, dirY,
-            actualForce
-        );
-        this.nextColor();
-    }
-
-    update(gesture, position) {
+    update(gesture, position, prevPosition) {
         if (!this.isActive) return;
 
-        // Show charge effect when palm is open
-        if (gesture === GESTURES.OPEN_PALM) {
-            if (!this.isCharging) {
-                this.isCharging = true;
-                this.chargeStartTime = Date.now();
+        if (gesture === GESTURES.POINT) {
+            this.isCharging = true;
+
+            // Calculate direction of stream based on finger movement, or default upwards
+            let dirX = 0;
+            let dirY = -1; // Default shoot UP
+
+            if (prevPosition) {
+                const dx = position.x - prevPosition.x;
+                const dy = position.y - prevPosition.y;
+                // If moving fast enough, aim in that direction
+                if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+                    const absM = Math.sqrt(dx * dx + dy * dy);
+                    dirX = dx / absM;
+                    dirY = dy / absM;
+                }
             }
+
+            // Shoot the continuous water stream!
+            this.particles.emitWaterStream(position.x, position.y, this.currentColor, dirX, dirY);
+
+        } else if (gesture === GESTURES.OPEN_PALM) {
+            // Show "ready to shoot" glowing charge effect
             this.particles.emitCharge(position.x, position.y, this.currentColor);
+            this.isCharging = false;
         } else {
             this.isCharging = false;
         }

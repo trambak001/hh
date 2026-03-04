@@ -430,6 +430,32 @@ class ParticleManager {
         this.shake(15);
     }
 
+    // Continuous water stream (Water Gun)
+    emitWaterStream(x, y, color, dirX = 0, dirY = -1) {
+        // Emit just a few particles per frame for a continuous stream
+        for (let i = 0; i < 3 && this.particles.length < this.MAX_PARTICLES; i++) {
+            const spread = 0.5; // Narrow spread for a stream
+            const speed = Math.random() * 8 + 8; // Fast
+
+            this.particles.push(new WaterParticle(x, y, color, {
+                speedX: (dirX + (Math.random() - 0.5) * spread) * speed,
+                speedY: (dirY + (Math.random() - 0.5) * spread) * speed,
+                size: Math.random() * 6 + 3,
+                lifetime: 80
+            }));
+        }
+
+        // Occasional drip if aiming down
+        if (dirY > 0 && Math.random() < 0.1 && this.drips.length < this.MAX_DRIPS) {
+            this.drips.push(new DripParticle(x, y, color, 1000)); // Default high canvas height assumption
+        }
+
+        // Occasional small stain on screen
+        if (Math.random() < 0.05 && this.stains.length < this.MAX_STAINS) {
+            this.stains.push(new ColorStain(x + (Math.random() - 0.5) * 40, y + (Math.random() - 0.5) * 40, color, 15 + Math.random() * 15));
+        }
+    }
+
     // Sparkle burst (balloon pop, more festive)
     emitSparkle(x, y, color, count = 40) {
         for (let i = 0; i < count && this.particles.length < this.MAX_PARTICLES; i++) {
